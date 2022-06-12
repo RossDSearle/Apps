@@ -2,11 +2,9 @@
 
 machineName <- as.character(Sys.info()['nodename'])
 if(machineName=='soils-discovery'){
-  appRootDir <- '/srv/shiny-server/Apps/NLoss'
-  smipsDataRoot <- '/datasets/...'
-  DataRoot <- 'C:/Projects/NLoss/Data'
+  smipsDataRoot <- '/datasets/work/lw-sm-forecast/work/......'
+  DataRoot <- '/datasets/work/lw-soildatarepo/work/Ross/ShinyData/NLoss'
 }else{
-  appRootDir <- 'C:/Users/sea084/OneDrive - CSIRO/RossRCode/Git/Shiny/Apps/Nloss'
   smipsDataRoot <- 'C:/Projects/NLoss/Data/SMIPS'
   DataRoot <- 'C:/Projects/NLoss/Data'
 }

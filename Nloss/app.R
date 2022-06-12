@@ -13,9 +13,19 @@ library(shiny.pwa)
 library(shinybusy)
 
 
-appRootDir <- 'C:/Users/sea084/OneDrive - CSIRO/RossRCode/Git/Shiny/Apps/Nloss'
+#appRootDir <- 'C:/Users/sea084/OneDrive - CSIRO/RossRCode/Git/Shiny/Apps/Nloss'
+#appRootDir <- 'C:/Users/sea084/OneDrive - CSIRO/RossRCode/Git/Shiny/Apps/Nloss'
 
-source('C:/Users/sea084/OneDrive - CSIRO/RossRCode/Git/Shiny/HPC/appUtils.R')
+machineName <- as.character(Sys.info()['nodename'])
+print(machineName)
+if(machineName=='soils-discovery'){
+  appRootDir <- '/srv/shiny-server/Apps/Nloss'
+}else{
+  appRootDir <- 'C:/Users/sea084/OneDrive - CSIRO/RossRCode/Git/Shiny/Apps/Nloss'
+}
+
+print(paste0(appRootDir, '/Config.R'))
+#source('C:/Users/sea084/OneDrive - CSIRO/RossRCode/Git/Shiny/HPC/appUtils.R')
 source(paste0(appRootDir, '/Config.R'))
 source(paste0(appRootDir, '/Functions.R'))
 
