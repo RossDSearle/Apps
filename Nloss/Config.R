@@ -2,7 +2,10 @@
 
 machineName <- as.character(Sys.info()['nodename'])
 if(machineName=='soils-discovery'){
-  smipsDataRoot <- '/datasets/work/lw-sm-forecast/work/......'
+  
+  smipsDataRoot <- '/datasets/lw-sm-forecast_work_processed_delivery/SMIPS/v1.0/SMindex'
+  
+  #smipsDataRoot <- '/datasets/work/lw-sm-forecast/work/processed/delivery/SMIPS/v1.0/SMindex'
   DataRoot <- '/datasets/work/lw-soildatarepo/work/Ross/ShinyData/NLoss'
 }else{
   smipsDataRoot <- 'C:/Projects/NLoss/Data/SMIPS'
@@ -64,17 +67,19 @@ VolPotentialTable = fromJSON(
                [34.93827627, 29.58351103, 23.70956958, 19.93579252, 16.59521388, 0.615555556]]}')
 
 
-forecastURLs <- list("Queensland"="ftp://ftp.bom.gov.au/anon/gen/fwo/IDQ11295.xml",
-                     "New South Wales"="ftp://ftp.bom.gov.au/anon/gen/fwo/IDN11060.xml",
-                     "Northern Territory"="ftp://ftp.bom.gov.au/anon/gen/fwo/IDD10207.xml",
-                     "Victoria"="ftp://ftp.bom.gov.au/anon/gen/fwo/IDV10753.xml",
-                     "Tasmania"="ftp://ftp.bom.gov.au/anon/gen/fwo/IDT16710.xml",
-                     "Western Australia"="ftp://ftp.bom.gov.au/anon/gen/fwo/IDW14199.xml",
-                     "South Australia"="ftp://ftp.bom.gov.au/anon/gen/fwo/IDS10044.xml")
+states <- c("Queensland", "New South Wales", "Northern Territory", "Victoria", "Tasmania", "Western Australia", "South Australia")
 
 
-States <- c("Queensland", "New South Wales", "Northern Territory", "Victoria", "Tasmania", "Western Australia", "South Australia")
-forecastStoreDF <- data.frame(State=States, forecast=NA)
+surls  <- c("ftp://ftp.bom.gov.au/anon/gen/fwo/IDQ11295.xml",
+            "ftp://ftp.bom.gov.au/anon/gen/fwo/IDN11060.xml",
+            "ftp://ftp.bom.gov.au/anon/gen/fwo/IDD10207.xml",
+            "ftp://ftp.bom.gov.au/anon/gen/fwo/IDV10753.xml",
+            "ftp://ftp.bom.gov.au/anon/gen/fwo/IDT16710.xml",
+            "ftp://ftp.bom.gov.au/anon/gen/fwo/IDW14199.xml",
+            "ftp://ftp.bom.gov.au/anon/gen/fwo/IDS10044.xml")
+
+forecastURLs <- data.frame(State =states, URL = surls, stringsAsFactors = F)
+forecastStoreDF <- data.frame(State=states, forecast=NA, stringsAsFactors = F)
   
  
 

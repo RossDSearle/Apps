@@ -167,6 +167,13 @@ shiny::shinyApp(
     RV$StateForecastStore=forecastStoreDF
     RV$Results=''
     
+    observe({
+      if(devel==T){
+        RV$CurrentLongitude=145
+        RV$CurrentLatitude=-26
+      }
+    })
+    
     output$forecastTable = renderRHandsontable({
       req(RV$CurrentForecast)
       if(nrow(RV$CurrentForecast) > 0){
@@ -178,24 +185,34 @@ shiny::shinyApp(
     
     
     observeEvent(input$UI_Check, {
+      
+      
+      
       req(input$long)
+      
       RV$Results <- ''
-      print (paste0("Checking N Loss risk for Longitude = ", RV$CurrentLongitude, " and Latitude = ", RV$CurrentLatitude))
+      warning (paste0("Checking N Loss risk for Longitude = ", RV$CurrentLongitude, " and Latitude = ", RV$CurrentLatitude))
+
       smipsInfo <- getSMIPSData(RV$CurrentLongitude,RV$CurrentLatitude)
-      print(paste0('SMIPS soil moisture = ', format(round(smipsInfo$SoilMoisture, 2), nsmall = 2)))
-      RV$StateForecastStore <- getStateForecast(RV$StateForecastStore, lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
-     
-     forecastForLoc = getForecast(RV$StateForecastStore, lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
-     soiltype = getSoilType(lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
-
-
-     rain = forecastForLoc[2,10]
-
-     loss <- calculateNLoss(soilType = soiltype, soilMoisture = smipsInfo$SoilMoisture, rainfall = rain)
-
-     cost <- loss$Value * 0.01 * as.numeric(input$UI_UreaCost) * as.numeric(input$UI_UreaRate) * 0.001
-
-     RV$Results=paste0('<H1 style="color:blue; font-size:20px; font-weight:bold">Nitrogen Volatalistaion Risk</H1>',
+       warning(paste0('SMIPS soil moisture = ', format(round(smipsInfo$SoilMoisture, 2), nsmall = 2)))
+       RV$StateForecastStore <- getStateForecast(RV$StateForecastStore, lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
+      
+       
+        
+         forecastForLoc = getForecast(forecastStoreDF=RV$StateForecastStore, lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
+         
+         
+         soiltype = getSoilType(lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
+        
+        
+        rain = forecastForLoc[2,10]
+        warning(rain)
+        
+        loss <- calculateNLoss(soilType = soiltype, soilMoisture = smipsInfo$SoilMoisture, rainfall = rain)
+      
+      cost <- loss$Value * 0.01 * as.numeric(input$UI_UreaCost) * as.numeric(input$UI_UreaRate) * 0.001
+      warning(cost)
+      RV$Results=paste0('<H1 style="color:blue; font-size:20px; font-weight:bold">Nitrogen Volatalistaion Risk</H1>',
                        '<p style="color:', loss$Colour ,'; font-size:30px; text-align:center; font-weight:bold">', loss$Cat, '</p>',
                        '<p style="font-weight:bold">Potential N loss is ', sprintf("%1.0f", loss$Value) , '%</p>',
                        '<p style="font-weight:bold">That is $', sprintf("%1.0f", cost) , ' per Ha</p>',
@@ -207,10 +224,10 @@ shiny::shinyApp(
                        '<p style="color:blue;"><b>7 Day BoM Forecast</b></p>',
                        '<p style="font-weight:bold">Climate Station : ', forecastForLoc$Station[1],'</p>')
 
-     fdf <- data.frame(Day=forecastForLoc$Day, Temperature=paste0(forecastForLoc$MinTemp, ' to ', forecastForLoc$MaxTemp),
-                       Rainfall=paste0(forecastForLoc$LowerRain, ' to ', forecastForLoc$upperRain,'mm'), Probability=forecastForLoc$Probability)
-
-     RV$CurrentForecast <- fdf
+      fdf <- data.frame(Day=forecastForLoc$Day, Temperature=paste0(forecastForLoc$MinTemp, ' to ', forecastForLoc$MaxTemp),
+                        Rainfall=paste0(forecastForLoc$LowerRain, ' to ', forecastForLoc$upperRain,'mm'), Probability=forecastForLoc$Probability)
+      
+      RV$CurrentForecast <- fdf
 
     })
     
@@ -222,12 +239,14 @@ shiny::shinyApp(
       RV$CurrentLatitude=input$lat
     })
 
-    customIcon <- makeIcon(
-      iconUrl = "icons/marker-icon.png",
-      iconAnchorX = 10, iconAnchorY = 40,
-    )
+    # customIcon <- makeIcon(
+    #   iconUrl = "icons/marker-icon.png",
+    #   iconAnchorX = 10, iconAnchorY = 40,
+    # )
+    acm_defaults <- function(map, x, y) addMarkers(map, x, y, layerId="Selected" )
     
-    acm_defaults <- function(map, x, y) addMarkers(map, x, y, icon = customIcon, layerId="Selected" )
+    
+    #acm_defaults <- function(map, x, y) addMarkers(map, x, y, icon = customIcon, layerId="Selected" )
     # acm_defaults <- function(map, x, y) addCircleMarkers(map, x, y, radius=8, color="black", fillColor="orange", fillOpacity=1, opacity=1, weight=2, stroke=TRUE, layerId="Selected")
     # acm_defaults <- function(map, x, y) makeAwesomeIcon(map, x, y, icon = "fire", iconColor = "black", markerColor = "blue", library = "fa", layerId="Selected" )
     
