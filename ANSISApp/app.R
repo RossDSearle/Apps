@@ -19,15 +19,15 @@ library(shinybusy)
 machineName <- as.character(Sys.info()['nodename'])
 print(machineName)
 if(machineName=='soils-discovery'){
-  appRootDir <- '/srv/shiny-server/Apps/Nloss'
+  appRootDir <- '/srv/shiny-server/Apps/ANSISApp'
 }else{
-  appRootDir <- 'C:/Users/sea084/OneDrive - CSIRO/RossRCode/Git/Shiny/Apps/Nloss'
+  appRootDir <- 'C:/Users/sea084/OneDrive - CSIRO/RossRCode/Git/Shiny/Apps/ANSISApp'
 }
 
 print(paste0(appRootDir, '/Config.R'))
-#source('C:/Users/sea084/OneDrive - CSIRO/RossRCode/Git/Shiny/HPC/appUtils.R')
+
 source(paste0(appRootDir, '/Config.R'))
-source(paste0(appRootDir, '/Functions.R'))
+#source(paste0(appRootDir, '/Functions.R'))
 
 # ptX <- 149
 # ptY <- -35
@@ -163,9 +163,7 @@ shiny::shinyApp(
     
     RV$CurrentLongitude=NULL
     RV$CurrentLatitude=NULL
-    RV$CurrentForecast=NULL
-    RV$StateForecastStore=forecastStoreDF
-    RV$Results=''
+    
     
     output$forecastTable = renderRHandsontable({
       req(RV$CurrentForecast)
@@ -179,38 +177,9 @@ shiny::shinyApp(
     
     observeEvent(input$UI_Check, {
       req(input$long)
-      RV$Results <- ''
-      print (paste0("Checking N Loss risk for Longitude = ", RV$CurrentLongitude, " and Latitude = ", RV$CurrentLatitude))
-      smipsInfo <- getSMIPSData(RV$CurrentLongitude,RV$CurrentLatitude)
-      print(paste0('SMIPS soil moisture = ', format(round(smipsInfo$SoilMoisture, 2), nsmall = 2)))
-      RV$StateForecastStore <- getStateForecast(RV$StateForecastStore, lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
      
-     forecastForLoc = getForecast(RV$StateForecastStore, lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
-     soiltype = getSoilType(lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
-
-
-     rain = forecastForLoc[2,10]
-
-     loss <- calculateNLoss(soilType = soiltype, soilMoisture = smipsInfo$SoilMoisture, rainfall = rain)
-
-     cost <- loss$Value * 0.01 * as.numeric(input$UI_UreaCost) * as.numeric(input$UI_UreaRate) * 0.001
-
-     RV$Results=paste0('<H1 style="color:blue; font-size:20px; font-weight:bold">Nitrogen Volatalistaion Risk</H1>',
-                       '<p style="color:', loss$Colour ,'; font-size:30px; text-align:center; font-weight:bold">', loss$Cat, '</p>',
-                       '<p style="font-weight:bold">Potential N loss is ', sprintf("%1.0f", loss$Value) , '%</p>',
-                       '<p style="font-weight:bold">That is $', sprintf("%1.0f", cost) , ' per Ha</p>',
-                       '<p style="font-weight:bold">Soil Type : ', soiltype, '</p>',
-                       '<p style="font-weight:bold">Surface Soil Moisture : ', sprintf("%1.0f", smipsInfo$SoilMoisture * 100) , '%</p>',
-                       '<p style="font-weight:bold">Soil Moisture Date : ', smipsInfo$Date , '</p>',
-                       '<p style="font-weight:bold">Predicted rain for tomorrow : ', rain, ' mm</p>',
-                       '<BR>',
-                       '<p style="color:blue;"><b>7 Day BoM Forecast</b></p>',
-                       '<p style="font-weight:bold">Climate Station : ', forecastForLoc$Station[1],'</p>')
-
-     fdf <- data.frame(Day=forecastForLoc$Day, Temperature=paste0(forecastForLoc$MinTemp, ' to ', forecastForLoc$MaxTemp),
-                       Rainfall=paste0(forecastForLoc$LowerRain, ' to ', forecastForLoc$upperRain,'mm'), Probability=forecastForLoc$Probability)
-
-     RV$CurrentForecast <- fdf
+      print (paste0("Checking N Loss risk for Longitude = ", RV$CurrentLongitude, " and Latitude = ", RV$CurrentLatitude))
+     
 
     })
     
