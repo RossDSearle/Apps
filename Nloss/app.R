@@ -51,15 +51,20 @@ shiny::shinyApp(
     
     allowPWA = FALSE,  ## This turns off F7s default PWA generation and we use shiny.pwa as per below
     
-    pwa("https://shiny.esoil.io/NLoss/",  title = AppName, output = "www", icon='www/Nicon.png', 
+
+    pwa("https://shiny.esoil.io/Apps/Nloss/",  title = AppName, output = "www", icon='www/Nicon.png', 
         offline_template = 'www/offline.html', offline_message='Sorry we are offline'),
     
     add_busy_spinner(spin = "flower", margins = c(0, 0), position='full-page', color = 'red',height = "80px", width = "80px"),
     
     
     f7SingleLayout(
-      navbar = f7Navbar(
-        title = 'Nitrogen Loss Estimator',
+     
+        navbar = f7Navbar(
+
+        title = tags$div( tags$div(style="vertical-align:middle!important; text-align:left!important; display:inline-block;", "Nitrogen Loss Estimator"), HTML('&nbsp&nbsp&nbsp'), tags$div(style="float: right;", tags$img(src = "Logos/csiro.png", width = "40px", height = "40px", align='right'))),
+        
+       # title = 'Nitrogen Loss Estimator',
         hairline = T,
         shadow = F,
         leftPanel = T
@@ -67,7 +72,7 @@ shiny::shinyApp(
       panels = tagList(
         f7Panel(title = "Info", side = "left", theme = "light", effect = "cover",
                 
-                f7Link(label = "About BARS", href = "https://www.csiro.au/en/Research/AF/Areas/Boorowa-Agricultural-Research-Station"),
+               # f7Link(label = "About BARS", href = "https://www.csiro.au/en/Research/AF/Areas/Boorowa-Agricultural-Research-Station"),
                 
                # f7Slider( inputId='UI_UreaCost',label=NULL, min = 0, max=1200, value=800)
                f7Select(inputId='UI_UreaCost',label='Urea Price', choices=seq(0, 1200, 10),selected = 800, width = 100)
@@ -81,18 +86,24 @@ shiny::shinyApp(
                     f7Card(
                       title = NULL,
                       HTML('Select a location by clicking on the map'),
-                      leafletOutput("mainMap", height = 400, width = 400),
+                      leafletOutput("mainMap", height = 370, width = 350),
                       HTML('<BR>'),
                       f7Select(inputId='UI_UreaRate',label='Application Rate (kg/Ha)', choices=seq(0, 300, 10),selected = 100, width = 300),
                       HTML('<BR>'),
                       f7Button("UI_Check", paste0("Check Potential Nitrogen Loss")),
                       
                     ),
+                   # tags$div( style=paste0("height: ", 500),
                     f7Card(
+                      height = 500,
                       title = NULL,
                       htmlOutput('UI_Results'),
-                      rHandsontableOutput('forecastTable' )
+                      rHandsontableOutput('forecastTable' ),
+                     # HTML('<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>test'),
+                      
                     )
+                    
+                   # )
               )
           )
         ),
@@ -100,6 +111,26 @@ shiny::shinyApp(
       
       uiOutput("ui"),
       
+      
+      tags$head(tags$script(
+        'Shiny.addCustomMessageHandler("refocus",
+                                  function(NULL) {
+                                    document.getElementById("UI_Results").focus();
+                                  });'
+      )),
+      
+      
+      tags$head(tags$script(
+        'Shiny.addCustomMessageHandler("scrollToBottom",
+                                  function(NULL) {
+                                 
+                                   //  window.scrollTo(0, document.body.scrollHeight || document.documentElement.scrollHeight);
+                                    var element = document.getElementById("UI_Results");
+                                    element.scrollIntoView({behavior: "smooth", block: "start", inline: "start"});
+                                   //  alert("Here");
+                                  });'
+      )),
+     
       
       #######   Cookie Management  ########### 
       
@@ -165,7 +196,15 @@ shiny::shinyApp(
     RV$CurrentLatitude=NULL
     RV$CurrentForecast=NULL
     RV$StateForecastStore=forecastStoreDF
-    RV$Results=''
+    RV$Results=HTML('<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>')
+   # RV$Results=''
+    
+    observe({
+      if(devel==T){
+        RV$CurrentLongitude=145
+        RV$CurrentLatitude=-26
+      }
+    })
     
     output$forecastTable = renderRHandsontable({
       req(RV$CurrentForecast)
@@ -178,24 +217,30 @@ shiny::shinyApp(
     
     
     observeEvent(input$UI_Check, {
+      
+      
+      
       req(input$long)
+      
       RV$Results <- ''
-      print (paste0("Checking N Loss risk for Longitude = ", RV$CurrentLongitude, " and Latitude = ", RV$CurrentLatitude))
+
       smipsInfo <- getSMIPSData(RV$CurrentLongitude,RV$CurrentLatitude)
-      print(paste0('SMIPS soil moisture = ', format(round(smipsInfo$SoilMoisture, 2), nsmall = 2)))
-      RV$StateForecastStore <- getStateForecast(RV$StateForecastStore, lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
-     
-     forecastForLoc = getForecast(RV$StateForecastStore, lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
-     soiltype = getSoilType(lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
+       RV$StateForecastStore <- getStateForecast(RV$StateForecastStore, lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
+      
+       
+        
+         forecastForLoc = getForecast(forecastStoreDF=RV$StateForecastStore, lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
+         
+         
+         soiltype = getSoilType(lon = RV$CurrentLongitude, lat = RV$CurrentLatitude)
+        
+        
+        rain = forecastForLoc[2,10]
 
-
-     rain = forecastForLoc[2,10]
-
-     loss <- calculateNLoss(soilType = soiltype, soilMoisture = smipsInfo$SoilMoisture, rainfall = rain)
-
-     cost <- loss$Value * 0.01 * as.numeric(input$UI_UreaCost) * as.numeric(input$UI_UreaRate) * 0.001
-
-     RV$Results=paste0('<H1 style="color:blue; font-size:20px; font-weight:bold">Nitrogen Volatalistaion Risk</H1>',
+        loss <- calculateNLoss(soilType = soiltype, soilMoisture = smipsInfo$SoilMoisture, rainfall = rain)
+      
+      cost <- loss$Value * 0.01 * as.numeric(input$UI_UreaCost) * as.numeric(input$UI_UreaRate) * 0.001
+      RV$Results=paste0('<H1 id="ResultsHeader" style="color:blue; font-size:20px; font-weight:bold">Nitrogen Volatilisation Risk</H1>',
                        '<p style="color:', loss$Colour ,'; font-size:30px; text-align:center; font-weight:bold">', loss$Cat, '</p>',
                        '<p style="font-weight:bold">Potential N loss is ', sprintf("%1.0f", loss$Value) , '%</p>',
                        '<p style="font-weight:bold">That is $', sprintf("%1.0f", cost) , ' per Ha</p>',
@@ -207,11 +252,17 @@ shiny::shinyApp(
                        '<p style="color:blue;"><b>7 Day BoM Forecast</b></p>',
                        '<p style="font-weight:bold">Climate Station : ', forecastForLoc$Station[1],'</p>')
 
-     fdf <- data.frame(Day=forecastForLoc$Day, Temperature=paste0(forecastForLoc$MinTemp, ' to ', forecastForLoc$MaxTemp),
-                       Rainfall=paste0(forecastForLoc$LowerRain, ' to ', forecastForLoc$upperRain,'mm'), Probability=forecastForLoc$Probability)
+      fdf <- data.frame(Day=forecastForLoc$Day, Temperature=paste0(forecastForLoc$MinTemp, ' to ', forecastForLoc$MaxTemp),
+                        Rainfall=paste0(forecastForLoc$LowerRain, ' to ', forecastForLoc$upperRain,'mm'), Probability=forecastForLoc$Probability)
+      
+      RV$CurrentForecast <- fdf
+      
 
-     RV$CurrentForecast <- fdf
-
+    })
+    
+    observe({
+      req(RV$CurrentForecast )
+      session$sendCustomMessage(type="scrollToBottom",message=list(NULL))
     })
     
     output$UI_Results <- renderText({ RV$Results })
@@ -222,12 +273,14 @@ shiny::shinyApp(
       RV$CurrentLatitude=input$lat
     })
 
-    customIcon <- makeIcon(
-      iconUrl = "icons/marker-icon.png",
-      iconAnchorX = 10, iconAnchorY = 40,
-    )
+    # customIcon <- makeIcon(
+    #   iconUrl = "icons/marker-icon.png",
+    #   iconAnchorX = 10, iconAnchorY = 40,
+    # )
+    acm_defaults <- function(map, x, y) addMarkers(map, x, y, layerId="Selected" )
     
-    acm_defaults <- function(map, x, y) addMarkers(map, x, y, icon = customIcon, layerId="Selected" )
+    
+    #acm_defaults <- function(map, x, y) addMarkers(map, x, y, icon = customIcon, layerId="Selected" )
     # acm_defaults <- function(map, x, y) addCircleMarkers(map, x, y, radius=8, color="black", fillColor="orange", fillOpacity=1, opacity=1, weight=2, stroke=TRUE, layerId="Selected")
     # acm_defaults <- function(map, x, y) makeAwesomeIcon(map, x, y, icon = "fire", iconColor = "black", markerColor = "blue", library = "fa", layerId="Selected" )
     
