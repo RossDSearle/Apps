@@ -166,7 +166,8 @@ shiny::shinyApp(
     observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = RV$SoilSites, {
       
       if(devel){
-        RV$SoilSites <- read.csv('c:/temp/soilSites.csv', stringsAsFactors = F)
+       
+        RV$SoilSites <- read.csv(paste0(appRootDir,'/Data/soilSites.csv'), stringsAsFactors = F)
       }else{
         RV$SoilSites <- fromJSON(url)
       }
