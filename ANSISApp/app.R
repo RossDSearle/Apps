@@ -162,7 +162,6 @@ shiny::shinyApp(
     RV$CurrentProps=NULL
     RV$SoilSites=NULL
     
-    
     observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = RV$SoilSites, {
       
       if(devel){

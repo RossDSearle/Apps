@@ -16,9 +16,14 @@ props <- read.csv(paste0('C:/Users/sea084/OneDrive - CSIRO/RossRCode/Git/Shiny/A
 
 
 
-url <- 'https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?DataSet=QLDGovernment&siteid=ABS_148_1&propertytype=LaboratoryMeasurement&tabletype=narrow&usr=TrustedDemo&key=jvdn64df'
+url <- 'https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?DataSet=QLDGovernment&siteid=SALTS_96_1&propertytype=LaboratoryMeasurement&tabletype=narrow&usr=TrustedDemo&key=jvdn64df'
 df <- fromJSON(URLencode(url))
 df
+
+xdf <- df[df$ObservedProperty=='3A1',]
+odf <- data.frame(UD=xdf$UpperDepth, LD=xdf$LowerDepth, Property=xdf$ObservedProperty, Value=xdf$Value, Units=xdf$Units)
+odf
+
 idxs <- which(!is.na(df$ObservedProperty))
 df[idxs, ]
 
