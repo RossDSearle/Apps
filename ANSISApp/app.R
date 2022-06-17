@@ -55,7 +55,7 @@ shiny::shinyApp(
     add_busy_spinner(spin = "flower", margins = c(0, 0), position='full-page', color = 'red',height = "80px", width = "80px"),
  
     
-    f7SingleLayout(
+    f7TabLayout(
       navbar = f7Navbar(
         title = 'ANSIS Demo',
         hairline = T,
@@ -68,6 +68,14 @@ shiny::shinyApp(
                 f7Link(label = "About ANSIS", href = "https://www.csiro.au/en/research/natural-environment/land/soil/ansis")
         )),
       
+      f7Tabs(
+        animated = T,
+        #swipeable = TRUE,
+        f7Tab(
+          tabName = "Profile",
+          icon = f7Icon("layers_fill"),
+          active = TRUE,
+      
       f7Float(
         f7Shadow(
           intensity = 10,
@@ -75,7 +83,7 @@ shiny::shinyApp(
           tags$div( style=paste0("width: ", defWidth),  
                     f7Card(
                       title = NULL,
-                      HTML('Select a location by clicking on the map'),
+                      HTML('Select a soil site marker to show data'),
                       leafletOutput("mainMap", height = 470, width = 370),
                       HTML('<BR>'),
                     ),
@@ -83,6 +91,8 @@ shiny::shinyApp(
                       title = NULL,
                       selectInput('UI_SoilProps', label ='', choices = NULL, width = 370),
                       htmlOutput('UI_SoilInfoHeader'),
+                      plotOutput('UI_SoilProfilePlot'),
+                      HTML('<BR><BR>'),
                       rHandsontableOutput('UI_SiteInfo' )
                     ),
                     f7Card(
@@ -91,7 +101,13 @@ shiny::shinyApp(
                     )
               )
           )
-        ),
+        )),
+      
+      f7Tab(
+        tabName = "Compare",
+        icon = f7Icon("layers_fill")
+      
+      )),
       
       
       uiOutput("ui"),
@@ -161,6 +177,7 @@ shiny::shinyApp(
     RV$CurrentSiteHeader=HTML('<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>')
     RV$CurrentProps=NULL
     RV$SoilSites=NULL
+    RV$CurrentPropdata=NULL
     
     observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = RV$SoilSites, {
       
@@ -172,6 +189,12 @@ shiny::shinyApp(
       }
     })
     
+    
+   output$UI_SoilProfilePlot <- renderPlot({
+     req(RV$CurrentPropdata)
+     isolate(title <- input$UI_SoilProps)
+     plotSoilProfileHBars(RV$CurrentPropdata, title)})
+   
     
     #####   Update attribute selection list
     observe({
@@ -230,10 +253,10 @@ shiny::shinyApp(
         RV$CurrentSiteHeader=paste0('<H1 id="ResultsHeader" style="color:blue; font-size:15px; font-weight:bold">',RV$CurrentSiteInfo[1,2] ,'</H1>',
                           '<p style="color: blue; font-size:10px; text-align:left; font-weight:normal">Data source : ', RV$CurrentSiteInfo[1,1], '</p>')
         
-        rhandsontable(odf,   manualColumnResize = T, readOnly = TRUE, rowHeaders = F)
-        #RV$CurrentSiteHeader <- RV$CurrentSiteInfo[1,1]
+        RV$CurrentPropdata <- odf
         
-        
+        rhandsontable(odf,   manualColumnResize = F, readOnly = TRUE, rowHeaders = F)
+
       }else{
         return(NULL)
       }
@@ -266,7 +289,9 @@ shiny::shinyApp(
           onClick=JS("function(btn, map){ map.setView({lon: 135, lat: -28}, 3); }"))) %>%
         fitBounds(Ausminx, Ausminy, Ausmaxx, Ausmaxy) %>%
 
-      addMarkers(data = RV$SoilSites, lng = ~Longitude, lat = ~Latitude, 
+        
+        
+        addMarkers(data = RV$SoilSites, lng = ~Longitude, lat = ~Latitude, 
                  #popup = ~as.character(Location_ID),
                  layerId=~paste0(DataSet, ' - ', Location_ID),
                  label = ~paste0(DataSet, ' - ', Location_ID),
@@ -274,6 +299,7 @@ shiny::shinyApp(
       )
     })
     
+
     
     observeEvent(input$mainMap_marker_click, { # update the map markers and view on location selectInput changes
         
