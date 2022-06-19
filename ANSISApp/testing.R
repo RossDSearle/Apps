@@ -20,6 +20,22 @@ url <- 'https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?
 df <- fromJSON(URLencode(url))
 df
 
+sdf <- fromJSON("https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Locations?longitude=130&latitude=-30&propertytype=LaboratoryMeasurement&closest=20&usr=TrustedDemo&key=jvdn64df")
+
+for (i in 1:nrow(sdf)) {
+ 
+  rec <- sdf[i,]
+  url <- paste0('https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?DataSet=', rec$DataSet ,'&siteid=', rec$Location_ID ,'&propertytype=LaboratoryMeasurement&tabletype=narrow&usr=TrustedDemo&key=jvdn64df')
+  df <- fromJSON(URLencode(url))
+  #print(head(df))
+  
+  idxs <- which(df$ObservedProperty=='4A1')
+  if(length(idxs)>0){
+    print(df[idxs,])
+  }
+  
+}
+
 xdf <- df[df$ObservedProperty=='3A1',]
 odf <- data.frame(UD=xdf$UpperDepth, LD=xdf$LowerDepth, Property=xdf$ObservedProperty, Value=xdf$Value, Units=xdf$Units)
 odf

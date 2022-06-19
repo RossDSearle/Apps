@@ -27,8 +27,6 @@ props <- read.csv(paste0(appRootDir,'/Data/PropertyLookups.csv'), stringsAsFacto
 
 
 url <- paste0(APIRoot, "/Site_Locations?DataSets=NatSoil&propertytype=LaboratoryMeasurement&bbox=", Ausminx,";", Ausmaxx,";", Ausminy,";", Ausmaxy, Auth)
-print(url)
-#SoilSites <- fromJSON(url)
 
 
 if(devel){
@@ -53,7 +51,7 @@ shiny::shinyApp(
         offline_template = 'www/offline.html', offline_message='Sorry we are offline'),
     
     add_busy_spinner(spin = "flower", margins = c(0, 0), position='full-page', color = 'red',height = "80px", width = "80px"),
- 
+   #add_busy_bar(timeout = 1000,     color = "#112446",     centered = FALSE,     height = "18px"   ),
     
     f7TabLayout(
       navbar = f7Navbar(
@@ -77,6 +75,7 @@ shiny::shinyApp(
           active = TRUE,
       
       f7Float(
+        side = "left",
         f7Shadow(
           intensity = 10,
           hover = TRUE,
@@ -86,82 +85,51 @@ shiny::shinyApp(
                       HTML('Select a soil site marker to show data'),
                       leafletOutput("mainMap", height = 470, width = 370),
                       HTML('<BR>'),
+                      f7Block(
+                        f7Progress(id = "pg1", value = 10, color = "blue")
+                      ),
+                      HTML('<BR>'),
                     ),
-                    f7Card(
-                      title = NULL,
-                      selectInput('UI_SoilProps', label ='', choices = NULL, width = 370),
-                      htmlOutput('UI_SoilInfoHeader'),
-                      plotOutput('UI_SoilProfilePlot'),
-                      HTML('<BR><BR>'),
-                      rHandsontableOutput('UI_SiteInfo' )
-                    ),
+                    uiOutput("card_SoilPropertyData"), # This card is dynamically changed below based on the device
+                   
                     f7Card(
                       title = "All Profile Data",
                       rHandsontableOutput('UI_AllSiteInfo' )
-                    )
+                    ),
+                    
               )
           )
         )),
       
       f7Tab(
         tabName = "Compare",
-        icon = f7Icon("layers_fill")
+        icon = f7Icon("fa-street-view")
       
       )),
-      
-      
-      uiOutput("ui"),
-      
-      
-      #######   Cookie Management  ########### 
-      
-      tags$head(tags$script(src="js.cookie.js")),
-      tags$head(tags$script(
-        HTML('
-        Shiny.addCustomMessageHandler ("readCookie",function (message) {
-        var cookie = readCookie(message.name);
-        Shiny.onInputChange("cookie", cookie);
-      })
-
-      function readCookie(name) {
-        var nameEQ = name + "=";
-        var ca = document.cookie.split(";");
-        for(var i=0;i < ca.length;i++) {
-                var c = ca[i];
-                while (c.charAt(0)==" ") c = c.substring(1,c.length);
-                if (c.indexOf(nameEQ) == 0) return      c.substring(nameEQ.length,c.length);
-        }   
-        return ""; }'))),
-      
-      tags$head(tags$script(
-        HTML('
-         Shiny.addCustomMessageHandler ("writeCookie",function (message) {
-         const d = new Date();
-         d.setTime(d.getTime() + (365*24*60*60*1000));
-         let expires = "expires="+ d.toUTCString();
-         document.cookie = "HPCAuth=" + message.name + ";" + expires + ";"           
-      })
-      '))        ),
      
-     tags$head(tags$script('
-      $(document).ready(function () {
-        navigator.geolocation.getCurrentPosition(onSuccess, onError);
-              
-        function onError (err) {
-          Shiny.onInputChange("geolocation", false);
-        }
-              
-        function onSuccess (position) {
-          setTimeout(function () {
-            var coords = position.coords;
-            console.log(coords.latitude + ", " + coords.longitude);
-            Shiny.onInputChange("geolocation", true);
-            Shiny.onInputChange("lat", coords.latitude);
-            Shiny.onInputChange("long", coords.longitude);
-          }, 1100)
-        }
-      });
-              ')      )
+     
+      
+      tags$style('.progressbar {height: 15px;}'),
+      
+      tags$head(tags$script('
+       $(document).ready(function () {
+         navigator.geolocation.getCurrentPosition(onSuccess, onError);
+               
+         function onError (err) {
+           Shiny.onInputChange("geolocation", false);
+         }
+               
+         function onSuccess (position) {
+           setTimeout(function () {
+             var coords = position.coords;
+             console.log(coords.latitude + ", " + coords.longitude);
+             Shiny.onInputChange("geolocation", true);
+             Shiny.onInputChange("lat", coords.latitude);
+             Shiny.onInputChange("long", coords.longitude);
+           }, 1100)
+         }
+       });
+               ')      )
     )
   ),
 
@@ -179,10 +147,33 @@ shiny::shinyApp(
     RV$SoilSites=NULL
     RV$CurrentPropdata=NULL
     
-    observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = RV$SoilSites, {
-      
-      if(devel){
+     output$card_SoilPropertyData <- renderUI({
+       req(input$deviceInfo)
        
+      if(input$deviceInfo$desktop) {
+       
+        f7Card(
+          title = NULL,
+          selectInput('UI_SoilProps', label ='', choices = NULL, width = 370),
+          htmlOutput('UI_SoilInfoHeader'),
+          plotOutput('UI_SoilProfilePlot'),
+          HTML('<BR><BR>'),
+          rHandsontableOutput('UI_SiteInfo' )
+        )
+      }else{
+        f7Card(
+          title = NULL,
+          f7Select('UI_SoilProps', label ='', choices = NULL, width = 370),
+          htmlOutput('UI_SoilInfoHeader'),
+          plotOutput('UI_SoilProfilePlot'),
+          HTML('<BR><BR>'),
+          rHandsontableOutput('UI_SiteInfo' )
+        )
+      }
+    })
+    
+    observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = RV$SoilSites, {
+      if(devel){
         RV$SoilSites <- read.csv(paste0(appRootDir,'/Data/soilSites.csv'), stringsAsFactors = F)
       }else{
         RV$SoilSites <- fromJSON(url)
