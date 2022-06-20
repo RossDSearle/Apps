@@ -51,7 +51,7 @@ shiny::shinyApp(
     
     allowPWA = FALSE,  ## This turns off F7s default PWA generation and we use shiny.pwa as per below
     
-
+    createManifest(title=AppName, start_url='https://shiny.esoil.io/Apps/Nloss/'),
     pwa("https://shiny.esoil.io/Apps/Nloss/",  title = AppName, output = "www", icon='www/Nicon.png', 
         offline_template = 'www/offline.html', offline_message='Sorry we are offline'),
     
