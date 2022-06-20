@@ -52,7 +52,7 @@ shiny::shinyApp(
     add_busy_spinner(spin = "flower", margins = c(0, 0), position='full-page', color = 'red',height = "80px", width = "80px"),
     busy_start_up(
       loader = tags$img(
-        src = "SoilProfile.png",
+        src = "SplashScreen.png",
         width = 100
       ),
       text = "Loading...",
