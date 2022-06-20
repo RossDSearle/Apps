@@ -53,7 +53,7 @@ shiny::shinyApp(
     busy_start_up(
       loader = tags$img(
         src = "SplashScreen.png",
-        width = 100
+        width = 200
       ),
       text = "Loading...",
       mode = "auto"
