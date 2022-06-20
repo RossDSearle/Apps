@@ -46,8 +46,8 @@ shiny::shinyApp(
     
     allowPWA = FALSE,  ## This turns off F7s default PWA generation and we use shiny.pwa as per below
     
-    pwa("https://shiny.esoil.io/ANSISApp/",  title = AppName, output = "www", icon='www/SoilProfile.png', 
-        offline_template = 'www/offline.html', offline_message='Sorry we are offline'),
+   pwa("https://shiny.esoil.io/ANSISApp/",  title = AppName, output = "www", icon='www/SoilProfile.png',
+       offline_template = 'www/offline.html', offline_message='Sorry we are offline'),
     
     add_busy_spinner(spin = "flower", margins = c(0, 0), position='full-page', color = 'red',height = "80px", width = "80px"),
     busy_start_up(
