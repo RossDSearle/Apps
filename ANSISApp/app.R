@@ -46,22 +46,16 @@ shiny::shinyApp(
     
     allowPWA = F,  ## This turns off F7s default PWA generation and we use shiny.pwa as per below
     
-<<<<<<< HEAD
-   pwa("https://shiny.esoil.io/Apps/ANSISApp/",  title = AppName, output = "www", icon='www/SoilProfile.png',
-       offline_template = 'www/offline.html', offline_message='Sorry we are offline'),
-=======
+
     pwa("https://shiny.esoil.io/Apps/ANSISApp/",  title = AppName, output = "www", icon='www/SoilProfile.png', 
         offline_template = 'www/offline.html', offline_message='Sorry we are offline'),
->>>>>>> 2e3046e5b4f88565be02e5b2544779aa92057b8e
+
     
     add_busy_spinner(spin = "flower", margins = c(0, 0), position='full-page', color = 'red',height = "80px", width = "80px"),
     busy_start_up(
-      loader = tags$img(
-        src = "SplashScreen.png",
-        width = 200
-      ),
-      text = "Loading...",
-      mode = "auto"
+      loader = tags$img(src = "SplashScreen2.png", width = 200),
+      text =  "Please wait while we rangle over 60,000 soil profiles for you .....",
+      mode = "manual"
     ),
     
    #add_busy_bar(timeout = 1000,     color = "#112446",     centered = FALSE,     height = "18px"   ),
@@ -297,6 +291,8 @@ shiny::shinyApp(
       
       req(input$lat)
       
+      remove_start_up(timeout = 200)
+      
       m <-leaflet() %>%
         clearMarkers() %>%
         addTiles(group = "Map") %>%
@@ -307,10 +303,7 @@ shiny::shinyApp(
           onClick=JS("function(btn, map){ map.setView({lon: 135, lat: -28}, 3); }"))) %>%
         fitBounds(Ausminx, Ausminy, Ausmaxx, Ausmaxy) %>%
 
-        
-        
         addMarkers(data = RV$SoilSites, lng = ~Longitude, lat = ~Latitude, 
-                 #popup = ~as.character(Location_ID),
                  layerId=~paste0(DataSet, ' - ', Location_ID),
                  label = ~paste0(DataSet, ' - ', Location_ID),
                  clusterOptions = markerClusterOptions()
