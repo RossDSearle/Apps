@@ -26,7 +26,6 @@ source(paste0(appRootDir, '/Functions.R'))
 props <- read.csv(paste0(appRootDir,'/Data/PropertyLookups.csv'), stringsAsFactors = F)
 
 
-url <- paste0(APIRoot, "/Site_Locations?DataSets=NatSoil&propertytype=LaboratoryMeasurement&bbox=", Ausminx,";", Ausmaxx,";", Ausminy,";", Ausmaxy, Auth)
 
 
 if(devel){
@@ -51,6 +50,15 @@ shiny::shinyApp(
         offline_template = 'www/offline.html', offline_message='Sorry we are offline'),
     
     add_busy_spinner(spin = "flower", margins = c(0, 0), position='full-page', color = 'red',height = "80px", width = "80px"),
+    busy_start_up(
+      loader = tags$img(
+        src = "SoilProfile.png",
+        width = 100
+      ),
+      text = "Loading...",
+      mode = "auto"
+    ),
+    
    #add_busy_bar(timeout = 1000,     color = "#112446",     centered = FALSE,     height = "18px"   ),
     
     f7TabLayout(
@@ -81,6 +89,7 @@ shiny::shinyApp(
           hover = TRUE,
           tags$div( style=paste0("width: ", defWidth),  
                     f7Card(
+                      
                       title = NULL,
                       HTML('Select a soil site marker to show data'),
                       leafletOutput("mainMap", height = 470, width = 370),
@@ -176,6 +185,8 @@ shiny::shinyApp(
       if(devel){
         RV$SoilSites <- read.csv(paste0(appRootDir,'/Data/soilSites.csv'), stringsAsFactors = F)
       }else{
+        
+        url <- paste0(APIRoot, "/Site_Locations?DataSets=NatSoil&propertytype=LaboratoryMeasurement&bbox=", Ausminx,";", Ausmaxx,";", Ausminy,";", Ausmaxy, Auth)
         RV$SoilSites <- fromJSON(url)
       }
     })
