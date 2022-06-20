@@ -53,7 +53,7 @@ shiny::shinyApp(
     busy_start_up(
       loader = tags$img(
         src = "SplashScreen.png",
-        width = 100
+        width = 200
       ),
       text = "Loading...",
       mode = "auto"
@@ -163,7 +163,7 @@ shiny::shinyApp(
        
         f7Card(
           title = NULL,
-          selectInput('UI_SoilProps', label ='', choices = NULL, width = 370),
+          selectInput('UI_SoilProps', label ='', choices = c('None'), width = 370),
           htmlOutput('UI_SoilInfoHeader'),
           plotOutput('UI_SoilProfilePlot'),
           HTML('<BR><BR>'),
@@ -172,8 +172,8 @@ shiny::shinyApp(
       }else{
         f7Card(
           title = NULL,
-         # f7Select('UI_SoilProps', label ='Soil Property', choices = NULL, width = 370),
-          selectInput('UI_SoilProps', label ='', choices = NULL, width = 370),
+          f7Picker(inputId='UI_SoilProps', label ='Soil Property', choices = c('None')),
+         # selectInput('UI_SoilProps', label ='', choices = NULL, width = 370),
           htmlOutput('UI_SoilInfoHeader'),
           plotOutput('UI_SoilProfilePlot'),
           HTML('<BR><BR>'),
@@ -226,7 +226,12 @@ shiny::shinyApp(
         }
         cnames <- cnames[nzchar(cnames)] #removes blanks
         RV$CurrentProps <- data.frame(LabMethod=apiProps, VocName=cnames)
+        
+        if(input$deviceInfo$desktop) {
         updateSelectInput(inputId = 'UI_SoilProps', choices = cnames)
+        }else{
+          updateF7Picker(inputId = 'UI_SoilProps', choices = cnames)
+        }
       }
     })
     
@@ -242,26 +247,31 @@ shiny::shinyApp(
     })
     
     output$UI_SiteInfo = renderRHandsontable({
+      
       req(input$UI_SoilProps)
       
-      if(nrow(RV$CurrentSiteInfo) > 0){
-        
-        item = input$UI_SoilProps
-       
-        mdf <- RV$CurrentProps
-        labMethod = mdf[mdf$VocName==item,]$LabMethod
-        df <- RV$CurrentSiteInfo[RV$CurrentSiteInfo$ObservedProperty==labMethod,]
-        odf <- data.frame(UD=df$UpperDepth, LD=df$LowerDepth, Property=df$ObservedProperty, Value=df$Value, Units=df$Units)
-        
-        RV$CurrentSiteHeader=paste0('<H1 id="ResultsHeader" style="color:blue; font-size:15px; font-weight:bold">',RV$CurrentSiteInfo[1,2] ,'</H1>',
-                          '<p style="color: blue; font-size:10px; text-align:left; font-weight:normal">Data source : ', RV$CurrentSiteInfo[1,1], '</p>')
-        
-        RV$CurrentPropdata <- odf
-        
-        rhandsontable(odf,   manualColumnResize = F, readOnly = TRUE, rowHeaders = F)
-
-      }else{
-        return(NULL)
+      
+      if(!input$UI_SoilProps=='None'){
+      
+          if(nrow(RV$CurrentSiteInfo) > 0){
+            
+            item = input$UI_SoilProps
+           
+            mdf <- RV$CurrentProps
+            labMethod = mdf[mdf$VocName==item,]$LabMethod
+            df <- RV$CurrentSiteInfo[RV$CurrentSiteInfo$ObservedProperty==labMethod,]
+            odf <- data.frame(UD=df$UpperDepth, LD=df$LowerDepth, Property=df$ObservedProperty, Value=df$Value, Units=df$Units)
+            
+            RV$CurrentSiteHeader=paste0('<H1 id="ResultsHeader" style="color:blue; font-size:15px; font-weight:bold">',RV$CurrentSiteInfo[1,2] ,'</H1>',
+                              '<p style="color: blue; font-size:10px; text-align:left; font-weight:normal">Data source : ', RV$CurrentSiteInfo[1,1], '</p>')
+            
+            RV$CurrentPropdata <- odf
+            
+            rhandsontable(odf,   manualColumnResize = F, readOnly = TRUE, rowHeaders = F)
+    
+          }else{
+            return(NULL)
+          }
       }
     })
     
