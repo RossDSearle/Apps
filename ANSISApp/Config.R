@@ -21,7 +21,7 @@ vocPaths <- data.frame(vocTypes=vocTypes,vocURL=vocURLs )
 
 defWidth = 300
 
-devel = F
+devel = T
 
 Ausminx <- 112.905
 Ausminy <-  -43.735

@@ -226,9 +226,14 @@ shiny::shinyApp(
         cnames <- cnames[nzchar(cnames)] #removes blanks
         RV$CurrentProps <- data.frame(LabMethod=apiProps, VocName=cnames)
         
+        #print(paste0('Combo Value is ', input$UI_SoilProps))
+       
+        
         if(input$deviceInfo$desktop) {
         updateSelectInput(inputId = 'UI_SoilProps', choices = cnames)
         }else{
+          cnames<-c("Total S - X-ray fluorescence", "Calcium phosphate-extractable S - ICPAES")
+          print(cnames)
           updateF7Picker(inputId = 'UI_SoilProps', choices = cnames)
         }
       }
@@ -251,6 +256,7 @@ shiny::shinyApp(
       
       
       if(!input$UI_SoilProps=='None'){
+        print(paste0('Combo Value is ', input$UI_SoilProps))
       
           if(nrow(RV$CurrentSiteInfo) > 0){
             
