@@ -83,19 +83,19 @@ shiny::shinyApp(
       
       f7Float(
         side = "left",
-        f7Shadow(
-          intensity = 10,
-          hover = TRUE,
+       # f7Shadow(
+      #    intensity = 10,
+       #   hover = TRUE,
           tags$div( style=paste0("width: ", defWidth),  
                     f7Card(
-                      
+                      outline = F,
                       title = NULL,
                       HTML('Select a soil site marker to show data'),
-                      leafletOutput("mainMap", height = 470, width = 370),
+                      leafletOutput("mainMap", height = 470, width = defWidth),
                       HTML('<BR>'),
-                      f7Block(
-                        f7Progress(id = "pg1", value = 10, color = "blue")
-                      ),
+                      # f7Block(
+                      #   f7Progress(id = "pg1", value = 10, color = "blue")
+                      # ),
                       HTML('<BR>'),
                     ),
                     uiOutput("card_SoilPropertyData"), # This card is dynamically changed below based on the device
@@ -103,10 +103,10 @@ shiny::shinyApp(
                     f7Card(
                       title = "All Profile Data",
                       rHandsontableOutput('UI_AllSiteInfo' )
-                    ),
+                    )
                     
               )
-          )
+         # )
         )),
       
       f7Tab(
@@ -162,7 +162,7 @@ shiny::shinyApp(
        
         f7Card(
           title = NULL,
-          selectInput('UI_SoilProps', label ='', choices = c('None'), width = 370),
+          selectInput('UI_SoilProps', label ='', choices = c('None'), width = defWidth),
           htmlOutput('UI_SoilInfoHeader'),
           plotOutput('UI_SoilProfilePlot'),
           HTML('<BR><BR>'),
@@ -171,7 +171,7 @@ shiny::shinyApp(
       }else{
         f7Card(
           title = NULL,
-          f7Picker(inputId='UI_SoilProps', label ='Soil Property', choices = c('None', 'None'), placeholder = "Soil property values", openIn = "auto", value='None'), ## weird bug - you need to pecify a blank list to get the list items update to work
+          f7Picker(inputId='UI_SoilProps', label ='Soil Property', choices = c('None', 'None.'), placeholder = "Soil property values", openIn = "auto", value='None'), ## weird bug - you need to pecify a blank list to get the list items update to work
           htmlOutput('UI_SoilInfoHeader'),
           plotOutput('UI_SoilProfilePlot'),
           HTML('<BR><BR>'),
@@ -231,9 +231,9 @@ shiny::shinyApp(
         if(input$deviceInfo$desktop) {
         updateSelectInput(inputId = 'UI_SoilProps', choices = cnames)
         }else{
-          cnames<-c("Total S - X-ray fluorescence", "Calcium phosphate-extractable S - ICPAES")
-          print(cnames)
-          updateF7Picker(inputId = 'UI_SoilProps', choices = as.character(cnames), openIn = "sheet")
+          # cnames<-c("Total S - X-ray fluorescence", "Calcium phosphate-extractable S - ICPAES")
+           print(cnames)
+          updateF7Picker(inputId = 'UI_SoilProps', choices = cnames)
         }
       }
     })
