@@ -171,8 +171,7 @@ shiny::shinyApp(
       }else{
         f7Card(
           title = NULL,
-          f7Picker(inputId='UI_SoilProps', label ='Soil Property', choices = c('None')),
-         # selectInput('UI_SoilProps', label ='', choices = NULL, width = 370),
+          f7Picker(inputId='UI_SoilProps', label ='Soil Property', choices = c('', ''), placeholder = "Soil property values", openIn = "auto", value=''), ## weird bug - you need to pecify a blank list to get the list items update to work
           htmlOutput('UI_SoilInfoHeader'),
           plotOutput('UI_SoilProfilePlot'),
           HTML('<BR><BR>'),
@@ -234,7 +233,7 @@ shiny::shinyApp(
         }else{
           cnames<-c("Total S - X-ray fluorescence", "Calcium phosphate-extractable S - ICPAES")
           print(cnames)
-          updateF7Picker(inputId = 'UI_SoilProps', choices = cnames)
+          updateF7Picker(inputId = 'UI_SoilProps', choices = as.character(cnames), openIn = "sheet")
         }
       }
     })
