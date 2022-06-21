@@ -102,7 +102,7 @@ shiny::shinyApp(
                    
                     f7Card(
                       title = "All Profile Data",
-                      rHandsontableOutput('UI_AllSiteInfo' )
+                      rHandsontableOutput('UI_AllSiteInfo')
                     )
                     
               )
@@ -166,7 +166,7 @@ shiny::shinyApp(
           htmlOutput('UI_SoilInfoHeader'),
           plotOutput('UI_SoilProfilePlot'),
           HTML('<BR><BR>'),
-          rHandsontableOutput('UI_SiteInfo' )
+          rHandsontableOutput('UI_SiteInfo'  )
         )
       }else{
         f7Card(
@@ -175,7 +175,7 @@ shiny::shinyApp(
           htmlOutput('UI_SoilInfoHeader'),
           plotOutput('UI_SoilProfilePlot'),
           HTML('<BR><BR>'),
-          rHandsontableOutput('UI_SiteInfo' )
+          rHandsontableOutput('UI_SiteInfo'  )
         )
       }
     })
@@ -232,8 +232,8 @@ shiny::shinyApp(
         updateSelectInput(inputId = 'UI_SoilProps', choices = cnames)
         }else{
           # cnames<-c("Total S - X-ray fluorescence", "Calcium phosphate-extractable S - ICPAES")
-           print(cnames)
-          updateF7Picker(inputId = 'UI_SoilProps', choices = cnames)
+          # print(cnames)
+          updateF7Picker(inputId = 'UI_SoilProps', choices = cnames, value = cnames[1],)
         }
       }
     })

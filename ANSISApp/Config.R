@@ -19,7 +19,7 @@ vocURLs <- c('https://vocabs.ardc.edu.au/repository/api/lda/csiro/soil-profile-c
 vocTypes <- c('FieldMeasurement', 'LaboratoryMeasurement')
 vocPaths <- data.frame(vocTypes=vocTypes,vocURL=vocURLs )
 
-defWidth = 370
+defWidth = 350
 
 devel = T
 
