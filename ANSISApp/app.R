@@ -116,6 +116,16 @@ shiny::shinyApp(
       )),
      
      
+      tags$head(tags$script(
+        'Shiny.addCustomMessageHandler("scrollToBottom",
+                                  function(NULL) {
+                                 
+                                   //  window.scrollTo(0, document.body.scrollHeight || document.documentElement.scrollHeight);
+                                    var element = document.getElementById("card_SoilPropertyData");
+                                    element.scrollIntoView({behavior: "smooth", block: "start", inline: "start"});
+                                    // alert("Here");
+                                  });'
+      )),
       
       tags$style('.progressbar {height: 15px;}'),
       
@@ -162,6 +172,7 @@ shiny::shinyApp(
        
         f7Card(
           title = NULL,
+          #id='Rossiscool',
           selectInput('UI_SoilProps', label ='', choices = c('None'), width = defWidth),
           htmlOutput('UI_SoilInfoHeader'),
           plotOutput('UI_SoilProfilePlot'),
@@ -179,12 +190,16 @@ shiny::shinyApp(
         )
       }
     })
+     
+     observe({
+       req(RV$CurrentSiteInfo )
+       session$sendCustomMessage(type="scrollToBottom",message=list(NULL))
+     })
     
     observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = RV$SoilSites, {
       if(devel){
         RV$SoilSites <- read.csv(paste0(appRootDir,'/Data/soilSites.csv'), stringsAsFactors = F)
       }else{
-        
         url <- paste0(APIRoot, "/Site_Locations?DataSets=NatSoil&propertytype=LaboratoryMeasurement&bbox=", Ausminx,";", Ausmaxx,";", Ausminy,";", Ausmaxy, Auth)
         RV$SoilSites <- fromJSON(url)
       }
@@ -225,14 +240,9 @@ shiny::shinyApp(
         cnames <- cnames[nzchar(cnames)] #removes blanks
         RV$CurrentProps <- data.frame(LabMethod=apiProps, VocName=cnames)
         
-        #print(paste0('Combo Value is ', input$UI_SoilProps))
-       
-        
         if(input$deviceInfo$desktop) {
         updateSelectInput(inputId = 'UI_SoilProps', choices = cnames)
         }else{
-          # cnames<-c("Total S - X-ray fluorescence", "Calcium phosphate-extractable S - ICPAES")
-           print(cnames)
           updateF7Picker(inputId = 'UI_SoilProps', choices = cnames)
         }
       }
@@ -255,8 +265,7 @@ shiny::shinyApp(
       
       
       if(!input$UI_SoilProps=='None'){
-        print(paste0('Combo Value is ', input$UI_SoilProps))
-      
+
           if(nrow(RV$CurrentSiteInfo) > 0){
             
             item = input$UI_SoilProps
