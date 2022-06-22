@@ -545,7 +545,9 @@ if(!devel){
           }
         }
    }else{
-     odf <- read.csv('c:/temp/compData.csv', stringsAsFactors = F)
+     
+     odf <- read.csv(paste0(appRootDir,'/Data/tmp/compData.csv'), stringsAsFactors = F)
+     
    }
       #write.csv(odf, 'c:/temp/compData.csv', row.names = F)
 
