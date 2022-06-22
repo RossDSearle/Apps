@@ -101,7 +101,7 @@ shiny::shinyApp(
                    
                     f7Card(
                       title = "All Profile Data",
-                      rHandsontableOutput('UI_AllSiteInfo' )
+                      rHandsontableOutput('UI_AllSiteInfo')
                     )
                     
               )
@@ -212,7 +212,6 @@ shiny::shinyApp(
           plotOutput('UI_SoilProfilePlot'),
           HTML('<BR><BR>'),
           rHandsontableOutput('UI_SiteInfo' )
-         
         )
       }else{
         f7Card(
@@ -222,15 +221,11 @@ shiny::shinyApp(
           shinycssloaders::withSpinner(htmlOutput('UI_wait')),
           plotOutput('UI_SoilProfilePlot'),
           HTML('<BR><BR>'),
-          rHandsontableOutput('UI_SiteInfo' )
+          rHandsontableOutput('UI_SiteInfo'  )
         )
       }
     })
-     
-     # observe({
-     #   req(RV$CurrentSiteInfo )
-     #  
-     # })
+
     
     ##### Fetch site locations  ####
     
@@ -287,6 +282,22 @@ shiny::shinyApp(
           }else{
             updateF7Picker(inputId = 'UI_SoilProps', choices = cnames)
           }
+
+          cnames[i] <- propName
+        }
+        cnames <- cnames[nzchar(cnames)] #removes blanks
+        RV$CurrentProps <- data.frame(LabMethod=apiProps, VocName=cnames)
+        
+        #print(paste0('Combo Value is ', input$UI_SoilProps))
+       
+        
+        if(input$deviceInfo$desktop) {
+        updateSelectInput(inputId = 'UI_SoilProps', choices = cnames)
+        }else{
+          # cnames<-c("Total S - X-ray fluorescence", "Calcium phosphate-extractable S - ICPAES")
+          # print(cnames)
+          updateF7Picker(inputId = 'UI_SoilProps', choices = cnames, value = cnames[1],)
+
         }
       }
     })
