@@ -1,4 +1,5 @@
 library(terra)
+library(dplyr)
 
 
 
@@ -20,21 +21,39 @@ url <- 'https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?
 df <- fromJSON(URLencode(url))
 df
 
-sdf <- fromJSON("https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Locations?longitude=130&latitude=-30&propertytype=LaboratoryMeasurement&closest=20&usr=TrustedDemo&key=jvdn64df")
+sx=130.0567 
+sy=-29.9692
 
+sdf <- fromJSON(paste0("https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Locations?longitude=", sx,"&latitude=", sy ,"&propertytype=LaboratoryMeasurement&closest=20&usr=TrustedDemo&key=jvdn64df"))
+
+sitename <- sdf[1,]$Location_ID 
+
+
+odf<-data.frame()
 for (i in 1:nrow(sdf)) {
- 
+ print(i)
   rec <- sdf[i,]
   url <- paste0('https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?DataSet=', rec$DataSet ,'&siteid=', rec$Location_ID ,'&propertytype=LaboratoryMeasurement&tabletype=narrow&usr=TrustedDemo&key=jvdn64df')
   df <- fromJSON(URLencode(url))
-  #print(head(df))
-  
-  idxs <- which(df$ObservedProperty=='4A1')
-  if(length(idxs)>0){
-    print(df[idxs,])
+  if(is.null(df$error)){
+      #idxs <- which(df$ObservedProperty=='4A1' & df$UpperDepth==0)
+      if(nrow(df)>0){
+        odf<-rbind(odf, df)
+      }
   }
-  
 }
+
+idxs <- which(odf$UpperDepth==0)
+obs = as.data.frame(odf[idxs,] %>% group_by(ObservedProperty)  %>% summarise(n()))
+idxxs <- which(obs[,2] >= 5)
+obsToDo <- obs[idxxs,]
+
+vals <- as.numeric(odf[odf$UpperDepth==0 & odf$ObservedProperty == '4A1', ]$Value)
+boxplot(vals, col = 'green')
+stripchart(8.5, cex=5, pch = 18, col = 'red', vertical = TRUE, add = TRUE)  
+
+
+
 
 xdf <- df[df$ObservedProperty=='3A1',]
 odf <- data.frame(UD=xdf$UpperDepth, LD=xdf$LowerDepth, Property=xdf$ObservedProperty, Value=xdf$Value, Units=xdf$Units)

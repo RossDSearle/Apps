@@ -41,6 +41,7 @@ if(devel){
 
 shiny::shinyApp(
   ui = f7Page(
+    #options = list(dark = F, pullToRefresh = TRUE),
     options = list(dark = F),
     title = NULL,
     
@@ -50,8 +51,8 @@ shiny::shinyApp(
     pwa("https://shiny.esoil.io/Apps/ANSISApp/",  title = AppName, output = "www", icon='www/SoilProfile.png', 
         offline_template = 'www/offline.html', offline_message='Sorry we are offline'),
 
-    
-    add_busy_spinner(spin = "flower", margins = c(0, 0), position='full-page', color = 'red',height = "80px", width = "80px"),
+    #use_busy_spinner(spin = "flower", margins = c(0, 0), position='full-page', color = 'red',height = "80px", width = "80px"),
+   # add_busy_spinner(spin = "flower", margins = c(0, 0), position='full-page', color = 'red',height = "80px", width = "80px"),
     busy_start_up(
       loader = tags$img(src = "SplashScreen2.png", width = 200),
       text =  "Please wait while we rangle over 60,000 soil profiles for you .....",
@@ -80,18 +81,16 @@ shiny::shinyApp(
           tabName = "Profile",
           icon = f7Icon("layers_fill"),
           active = TRUE,
+          
       
       f7Float(
         side = "left",
-       # f7Shadow(
-      #    intensity = 10,
-       #   hover = TRUE,
           tags$div( style=paste0("width: ", defWidth),  
                     f7Card(
                       outline = F,
                       title = NULL,
                       HTML('Select a soil site marker to show data'),
-                      leafletOutput("mainMap", height = 470, width = defWidth),
+                      shinycssloaders::withSpinner(leafletOutput("mainMap", height = 470, width = defWidth)),
                       HTML('<BR>'),
                       # f7Block(
                       #   f7Progress(id = "pg1", value = 10, color = "blue")
@@ -111,8 +110,32 @@ shiny::shinyApp(
       
       f7Tab(
         tabName = "Compare",
-        icon = f7Icon("fa-street-view")
-      
+        icon = f7Icon("fa-street-view"),
+       
+        
+        f7Float(
+          side = "left",
+          
+            tags$div( style=paste0("width: ", defWidth),  
+                f7Card(
+                  outline = F,
+                  title = NULL,
+                  HTML('Select a soil site marker to compare data'),
+                  leafletOutput("UI_compareMap", height = 470, width = defWidth),
+                  HTML('<BR>'),
+                  f7Block(
+                    f7Progress(id = "UI_comparepg1", value = 0, color = "blue")
+                  ),
+                  HTML('<BR>'),
+                ),
+                uiOutput("card_compareSoilPropertyData"), # This card is dynamically changed below based on the device
+                
+                f7Card(
+                  title = "All Profile Data",
+                  rHandsontableOutput('UI_compareAllSiteInfo' )
+                )
+            )
+        )
       )),
      
      
@@ -121,49 +144,60 @@ shiny::shinyApp(
                                   function(NULL) {
                                  
                                    //  window.scrollTo(0, document.body.scrollHeight || document.documentElement.scrollHeight);
-                                    var element = document.getElementById("card_SoilPropertyData");
-                                    element.scrollIntoView({behavior: "smooth", block: "start", inline: "start"});
+                                    var element = document.getElementById("UI_SoilProfilePlot");
+                                    element.scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"});
                                     // alert("Here");
                                   });'
       )),
       
       tags$style('.progressbar {height: 15px;}'),
       
-      tags$head(tags$script('
-       $(document).ready(function () {
-         navigator.geolocation.getCurrentPosition(onSuccess, onError);
-               
-         function onError (err) {
-           Shiny.onInputChange("geolocation", false);
-         }
-               
-         function onSuccess (position) {
-           setTimeout(function () {
-             var coords = position.coords;
-             console.log(coords.latitude + ", " + coords.longitude);
-             Shiny.onInputChange("geolocation", true);
-             Shiny.onInputChange("lat", coords.latitude);
-             Shiny.onInputChange("long", coords.longitude);
-           }, 1100)
-         }
-       });
-               ')      )
+    #  tags$style(".shinybusy-ready {z-index: 9995 !important;}"),
+      
+      # tags$head(tags$script('
+      #  $(document).ready(function () {
+      #    navigator.geolocation.getCurrentPosition(onSuccess, onError);
+      #          
+      #    function onError (err) {
+      #      Shiny.onInputChange("geolocation", false);
+      #    }
+      #          
+      #    function onSuccess (position) {
+      #      setTimeout(function () {
+      #        var coords = position.coords;
+      #        console.log(coords.latitude + ", " + coords.longitude);
+      #        Shiny.onInputChange("geolocation", true);
+      #        Shiny.onInputChange("lat", coords.latitude);
+      #        Shiny.onInputChange("long", coords.longitude);
+      #      }, 1100)
+      #    }
+      #  });
+      #          ')      )
     )
   ),
 
   
   
-  #######   Server Code  ###########   
+  #######   SERVER CODE  ###########  
+ 
   
   server = function(input, output, session) {
+
+#####  Single Profile Data Tab  ###############################################    
     
     RV <- reactiveValues()
 
     RV$CurrentSiteInfo=NULL
-    RV$CurrentSiteHeader=HTML('<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>')
+    RV$CurrentSiteHeader= NULL #HTML('<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>')
     RV$CurrentProps=NULL
     RV$SoilSites=NULL
     RV$CurrentPropdata=NULL
+    RV$CurrentSiteLocation=NULL
+    RV$WaitText=NULL
+    
+    
+    ##### _ #### 
+    #### Render Dynamic GUI  ###########
     
      output$card_SoilPropertyData <- renderUI({
        req(input$deviceInfo)
@@ -172,18 +206,20 @@ shiny::shinyApp(
        
         f7Card(
           title = NULL,
-          #id='Rossiscool',
           selectInput('UI_SoilProps', label ='', choices = c('None'), width = defWidth),
           htmlOutput('UI_SoilInfoHeader'),
+          shinycssloaders::withSpinner( htmlOutput('UI_wait')),
           plotOutput('UI_SoilProfilePlot'),
           HTML('<BR><BR>'),
           rHandsontableOutput('UI_SiteInfo' )
+         
         )
       }else{
         f7Card(
           title = NULL,
           f7Picker(inputId='UI_SoilProps', label ='Soil Property', choices = c('None', 'None.'), placeholder = "Soil property values", openIn = "auto", value='None'), ## weird bug - you need to pecify a blank list to get the list items update to work
           htmlOutput('UI_SoilInfoHeader'),
+          shinycssloaders::withSpinner(htmlOutput('UI_wait')),
           plotOutput('UI_SoilProfilePlot'),
           HTML('<BR><BR>'),
           rHandsontableOutput('UI_SiteInfo' )
@@ -191,10 +227,12 @@ shiny::shinyApp(
       }
     })
      
-     observe({
-       req(RV$CurrentSiteInfo )
-       session$sendCustomMessage(type="scrollToBottom",message=list(NULL))
-     })
+     # observe({
+     #   req(RV$CurrentSiteInfo )
+     #  
+     # })
+    
+    ##### Fetch site locations  ####
     
     observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = RV$SoilSites, {
       if(devel){
@@ -205,50 +243,55 @@ shiny::shinyApp(
       }
     })
     
-    
+  ##### Plot profile data for an attribute ####
    output$UI_SoilProfilePlot <- renderPlot({
-     req(RV$CurrentPropdata)
-     isolate(title <- input$UI_SoilProps)
-     plotSoilProfileHBars(RV$CurrentPropdata, title)})
+     req(RV$CurrentProps,RV$CurrentPropdata)
+             isolate(title <- input$UI_SoilProps)
+             plotSoilProfileHBars(RV$CurrentPropdata, title)
+         
+     })
    
     
-    #####   Update attribute selection list
+    #####   Update attribute selection list  ####
     observe({
       req(RV$CurrentSiteInfo)
       {
-        df <- RV$CurrentSiteInfo
-        
-        apiProps <- unique(df$ObservedProperty)
-        apiProps <- apiProps[which(!is.na(apiProps))]
-        cnames <- vector(mode = 'character', length = length(apiProps))
-        
-        for(i in 1:length(apiProps)){
-          rec <- props[props$Property==apiProps[i],]
-          if(nrow(rec)>0){
-            if( rec$VocabURL==''){
-              propName = rec$Description
-            }else{
-              
-              SVARoot <- vocPaths[vocPaths$vocTypes==rec$PropertyType,]$vocURL
-              vurl <- paste0(SVARoot,'?uri=',rec$VocabURL)
-              js <- fromJSON(vurl)
-              propName <- js$result$primaryTopic$prefLabel$'_value'
+        if(nrow( RV$CurrentSiteInfo)>0){
+          
+          df <- RV$CurrentSiteInfo
+          
+          apiProps <- unique(df$ObservedProperty)
+          apiProps <- apiProps[which(!is.na(apiProps))]
+          cnames <- vector(mode = 'character', length = length(apiProps))
+          
+          for(i in 1:length(apiProps)){
+            rec <- props[props$Property==apiProps[i],]
+            if(nrow(rec)>0){
+              if( rec$VocabURL==''){
+                propName = rec$Description
+              }else{
+                
+                SVARoot <- vocPaths[vocPaths$vocTypes==rec$PropertyType,]$vocURL
+                vurl <- paste0(SVARoot,'?uri=',rec$VocabURL)
+                js <- fromJSON(vurl)
+                propName <- js$result$primaryTopic$prefLabel$'_value'
+              }
             }
+            cnames[i] <- propName
           }
-          cnames[i] <- propName
-        }
-        cnames <- cnames[nzchar(cnames)] #removes blanks
-        RV$CurrentProps <- data.frame(LabMethod=apiProps, VocName=cnames)
-        
-        if(input$deviceInfo$desktop) {
-        updateSelectInput(inputId = 'UI_SoilProps', choices = cnames)
-        }else{
-          updateF7Picker(inputId = 'UI_SoilProps', choices = cnames)
+          cnames <- cnames[nzchar(cnames)] #removes blanks
+          RV$CurrentProps <- data.frame(LabMethod=apiProps, VocName=cnames)
+          
+          if(input$deviceInfo$desktop) {
+            updateSelectInput(inputId = 'UI_SoilProps', choices = cnames)
+          }else{
+            updateF7Picker(inputId = 'UI_SoilProps', choices = cnames)
+          }
         }
       }
     })
     
-    
+    ##### Render all site data table  ####
     output$UI_AllSiteInfo = renderRHandsontable({
       req(RV$CurrentSiteInfo)
       
@@ -259,6 +302,8 @@ shiny::shinyApp(
       }
     })
     
+    
+    ##### Render Current soil property data table  ####
     output$UI_SiteInfo = renderRHandsontable({
       
       req(input$UI_SoilProps)
@@ -288,7 +333,31 @@ shiny::shinyApp(
       }
     })
     
+    ##### Render site info header  ####
+    
         output$UI_SoilInfoHeader <- renderText({ RV$CurrentSiteHeader})
+    
+    
+    ##### Get the soil site data from the Federator  ####
+        output$UI_wait <- renderText({ 
+          req(RV$WaitText)
+         
+          req(RV$CurrentSiteLocation)
+          p <- RV$CurrentSiteLocation
+          
+          session$sendCustomMessage(type="scrollToBottom",message=list(NULL))
+          resp <- getSoilSiteData(p)
+          
+          if(!is.null(resp$error)){
+            f7Dialog(title = "Oops", text = resp$error)
+            return()
+          }
+          
+          idxs <- which(!is.na(resp$ObservedProperty))
+          RV$CurrentSiteInfo <- resp[idxs, ]
+          
+          paste0('')
+          })
 
     customIcon <- makeIcon(
       iconUrl = "icons/marker-icon.png",
@@ -299,18 +368,16 @@ shiny::shinyApp(
     # acm_defaults <- function(map, x, y) addCircleMarkers(map, x, y, radius=8, color="black", fillColor="orange", fillOpacity=1, opacity=1, weight=2, stroke=TRUE, layerId="Selected")
     # acm_defaults <- function(map, x, y) makeAwesomeIcon(map, x, y, icon = "fire", iconColor = "black", markerColor = "blue", library = "fa", layerId="Selected" )
     
+    
+    ##### Render the maiin map  ####
     output$mainMap <- renderLeaflet({
-      
-
-      
-      req(input$lat)
       
       remove_start_up(timeout = 200)
       
       m <-leaflet() %>%
         clearMarkers() %>%
         addTiles(group = "Map") %>%
-        addProviderTiles("Esri.WorldImagery", options = providerTileOptions(noWrap = F), group = "Satelite Image") %>%
+        addProviderTiles("Esri.WorldImagery", options = providerTileOptions(noWrap = F), group = "Satellite") %>%
         addMouseCoordinates()  %>%
         addEasyButton(easyButton(
           icon="fa-globe", title="Zoom to full extent",
@@ -321,27 +388,153 @@ shiny::shinyApp(
                  layerId=~paste0(DataSet, ' - ', Location_ID),
                  label = ~paste0(DataSet, ' - ', Location_ID),
                  clusterOptions = markerClusterOptions()
+      ) %>%
+    
+        addControlGPS(options = gpsOptions(position = "topleft", activate = TRUE, 
+                                           autoCenter = TRUE, maxZoom = 15, 
+                                           setView = TRUE)) %>%
+      
+      addLayersControl(
+        baseGroups = c("Map", "Satellite"),
+        options = layersControlOptions(collapsed = FALSE)
       )
     })
     
 
-    
+    ##### Map site click event  ####
     observeEvent(input$mainMap_marker_click, { # update the map markers and view on location selectInput changes
         
       p <- input$mainMap_marker_click
         if(is.null(p))
           return()
-        
-       resp <- getSoilSiteData(p)
-        
-        if(!is.null(resp$error)){
-          f7Dialog(title = "Oops", text = resp$error)
-          return()
-        }
-        
-        idxs <- which(!is.na(resp$ObservedProperty))
-        RV$CurrentSiteInfo <- resp[idxs, ]
+      RV$WaitText='Getting data'
+      RV$CurrentSiteLocation <- p 
     })
+    
+ 
+    
+    
+    
+    
+    
+    
+       
+####_####    
+########################################   Compare Site To Surrounding Sites  #####################################
+    ####_####  
+    
+#     RVC <- reactiveValues()
+#     
+#     RVC$AllSiteInfo=NULL
+#     RVC$compareCurrentSiteHeader=HTML('<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>')
+#     RVC$compareCurrentProps=NULL
+#     # RVC$SoilSites=NULL
+#     # RVC$CurrentPropdata=NULL
+#     
+#     output$card_compareSoilPropertyData <- renderUI({
+#       req(input$deviceInfo)
+#       
+#       if(input$deviceInfo$desktop) {
+#         
+#         f7Card(
+#           title = NULL,
+#           selectInput('UI_compareSoilProps', label ='', choices = c('None'), width = defWidth),
+#           htmlOutput('UI_compareSoilInfoHeader'),
+#           plotOutput('UI_compareBoxPlot'),
+#           HTML('<BR><BR>'),
+#           rHandsontableOutput('UI_SiteInfo' )
+#         )
+#       }else{
+#         f7Card(
+#           title = NULL,
+#           f7Picker(inputId='UI_compareSoilProps', label ='Soil Property', choices = c('None', 'None.'), placeholder = "Soil property values", openIn = "auto", value='None'), ## weird bug - you need to pecify a blank list to get the list items update to work
+#           htmlOutput('UI_compareSoilInfoHeader'),
+#           plotOutput('UI_compareBoxPlot'),
+#           HTML('<BR><BR>'),
+#           rHandsontableOutput('UI_SiteInfo' )
+#         )
+#       }
+#     })
+#     
+#     # observe({
+#     #   req(RV$CurrentSiteInfo )
+#     #   session$sendCustomMessage(type="scrollToBottom",message=list(NULL))
+#     # })
+#     
+#     
+#     output$UI_compareMap <- renderLeaflet({
+# 
+#       req(input$lat)
+#       
+#       m <-leaflet() %>%
+#         clearMarkers() %>%
+#         addTiles(group = "Map") %>%
+#         addProviderTiles("Esri.WorldImagery", options = providerTileOptions(noWrap = F), group = "Satelite Image") %>%
+#         addMouseCoordinates()  %>%
+#         addEasyButton(easyButton(
+#           icon="fa-globe", title="Zoom to full extent",
+#           onClick=JS("function(btn, map){ map.setView({lon: 135, lat: -28}, 3); }"))) %>%
+#         fitBounds(Ausminx, Ausminy, Ausmaxx, Ausmaxy) %>%
+#         
+#         addMarkers(data = RV$SoilSites, lng = ~Longitude, lat = ~Latitude, 
+#                    layerId=~paste0(DataSet, ' - ', Location_ID),
+#                    label = ~paste0(DataSet, ' - ', Location_ID),
+#                    clusterOptions = markerClusterOptions()
+#         )
+# 
+#     })
+#     
+#     observeEvent(input$UI_compareMap_marker_click, { # update the map markers and view on location selectInput changes
+#       
+#       p <- input$UI_compareMap_marker_click
+#       if(is.null(p))
+#         return()
+#       
+#       print(p)
+#       
+#       bits <- str_split(p, ' - ')
+#       dataset <- bits[[1]][1]
+#       sid <- bits[[1]][2]
+#       print(head( RV$SoilSites))
+#       
+#     #siteRec <-  RV$SoilSites[RV$SoilSites$DataSet==dataset & RV$SoilSites$Location_ID,] 
+#     sx <- p$lng
+#     sy <- p$lat 
+#     
+#     updateF7Progress(id = "UI_comparepg1", value = (10))
+#      sdf <- fromJSON(paste0("https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Locations?longitude=", sx,"&latitude=", sy ,"&propertytype=LaboratoryMeasurement&closest=20&usr=TrustedDemo&key=jvdn64df"))
+# 
+#    print(sdf)
+# 
+# 
+#       odf<-data.frame()
+#       for (i in 1:nrow(sdf)) {
+#         print(i)
+#         rec <- sdf[i,]
+#         url <- paste0('https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?DataSet=', rec$DataSet ,'&siteid=', rec$Location_ID ,'&propertytype=LaboratoryMeasurement&tabletype=narrow&usr=TrustedDemo&key=jvdn64df')
+#         df <- fromJSON(URLencode(url))
+#         if(is.null(df$error)){
+#           #idxs <- which(df$ObservedProperty=='4A1' & df$UpperDepth==0)
+#           if(nrow(df)>0){
+#             odf<-rbind(odf, df)
+#             updateF7Progress(id = "UI_comparepg1", value = (i*5))
+#           }
+#         }
+#       }
+#       
+#       updateF7Progress(id = "UI_comparepg1", value = 0)
+# 
+#       idxs <- which(odf$UpperDepth==0)
+#       obs = as.data.frame(odf[idxs,] %>% group_by(ObservedProperty)  %>% summarise(n()))
+#       idxxs <- which(obs[,2] >= 5)
+#       obsToDo <- obs[idxxs,]
+# print(obsToDo)
+#       # vals <- as.numeric(odf[odf$UpperDepth==0 & odf$ObservedProperty == '4A1', ]$Value)
+#       # boxplot(vals, col = 'green')
+#       # stripchart(8.5, cex=5, pch = 18, col = 'red', vertical = TRUE, add = TRUE)
+#       
+#     })
+    
     
     
     
