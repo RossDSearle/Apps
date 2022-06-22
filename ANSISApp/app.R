@@ -9,7 +9,7 @@ library(jsonlite)
 library(rhandsontable)
 library(shiny.pwa)
 library(shinybusy)
-
+library(dplyr)
 
 
 machineName <- as.character(Sys.info()['nodename'])
@@ -369,7 +369,7 @@ shiny::shinyApp(
     # acm_defaults <- function(map, x, y) makeAwesomeIcon(map, x, y, icon = "fire", iconColor = "black", markerColor = "blue", library = "fa", layerId="Selected" )
     
     
-    ##### Render the maiin map  ####
+    ##### Render the main map  ####
     output$mainMap <- renderLeaflet({
       
       remove_start_up(timeout = 200)
@@ -390,9 +390,9 @@ shiny::shinyApp(
                  clusterOptions = markerClusterOptions()
       ) %>%
     
-        addControlGPS(options = gpsOptions(position = "topleft", activate = TRUE, 
-                                           autoCenter = TRUE, maxZoom = 15, 
-                                           setView = TRUE)) %>%
+        # addControlGPS(options = gpsOptions(position = "topleft", activate = TRUE, 
+        #                                    autoCenter = TRUE, maxZoom = 15, 
+        #                                    setView = TRUE)) %>%
       
       addLayersControl(
         baseGroups = c("Map", "Satellite"),
@@ -423,119 +423,141 @@ shiny::shinyApp(
 ########################################   Compare Site To Surrounding Sites  #####################################
     ####_####  
     
-#     RVC <- reactiveValues()
-#     
-#     RVC$AllSiteInfo=NULL
-#     RVC$compareCurrentSiteHeader=HTML('<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>')
-#     RVC$compareCurrentProps=NULL
-#     # RVC$SoilSites=NULL
-#     # RVC$CurrentPropdata=NULL
-#     
-#     output$card_compareSoilPropertyData <- renderUI({
-#       req(input$deviceInfo)
-#       
-#       if(input$deviceInfo$desktop) {
-#         
-#         f7Card(
-#           title = NULL,
-#           selectInput('UI_compareSoilProps', label ='', choices = c('None'), width = defWidth),
-#           htmlOutput('UI_compareSoilInfoHeader'),
-#           plotOutput('UI_compareBoxPlot'),
-#           HTML('<BR><BR>'),
-#           rHandsontableOutput('UI_SiteInfo' )
-#         )
-#       }else{
-#         f7Card(
-#           title = NULL,
-#           f7Picker(inputId='UI_compareSoilProps', label ='Soil Property', choices = c('None', 'None.'), placeholder = "Soil property values", openIn = "auto", value='None'), ## weird bug - you need to pecify a blank list to get the list items update to work
-#           htmlOutput('UI_compareSoilInfoHeader'),
-#           plotOutput('UI_compareBoxPlot'),
-#           HTML('<BR><BR>'),
-#           rHandsontableOutput('UI_SiteInfo' )
-#         )
-#       }
-#     })
+    RVC <- reactiveValues()
+
+    RVC$AllSiteInfo=NULL
+    RVC$compareCurrentSiteHeader=NULL
+    RVC$compareCurrentProps=NULL
+    RVC$BoxPlotData=NULL
+
+########   Render Dynamic UI  #################################################
+    output$card_compareSoilPropertyData <- renderUI({
+      req(input$deviceInfo)
+
+      if(input$deviceInfo$desktop) {
+
+        f7Card(
+          title = NULL,
+          selectInput('UI_compareSoilProps', label ='', choices = c('None'), width = defWidth),
+          htmlOutput('UI_compareSoilInfoHeader'),
+          plotOutput('UI_compareBoxPlot'),
+          HTML('<BR><BR>'),
+          #rHandsontableOutput('UI_SiteInfo' )
+        )
+      }else{
+        f7Card(
+          title = NULL,
+          f7Picker(inputId='UI_compareSoilProps', label ='Soil Property', choices = c('None', 'None.'), placeholder = "Soil property values", openIn = "auto", value='None'), ## weird bug - you need to pecify a blank list to get the list items update to work
+          htmlOutput('UI_compareSoilInfoHeader'),
+          plotOutput('UI_compareBoxPlot'),
+          HTML('<BR><BR>'),
+          #rHandsontableOutput('UI_SiteInfo' )
+        )
+      }
+    })
 #     
 #     # observe({
 #     #   req(RV$CurrentSiteInfo )
 #     #   session$sendCustomMessage(type="scrollToBottom",message=list(NULL))
 #     # })
 #     
-#     
-#     output$UI_compareMap <- renderLeaflet({
 # 
-#       req(input$lat)
-#       
-#       m <-leaflet() %>%
-#         clearMarkers() %>%
-#         addTiles(group = "Map") %>%
-#         addProviderTiles("Esri.WorldImagery", options = providerTileOptions(noWrap = F), group = "Satelite Image") %>%
-#         addMouseCoordinates()  %>%
-#         addEasyButton(easyButton(
-#           icon="fa-globe", title="Zoom to full extent",
-#           onClick=JS("function(btn, map){ map.setView({lon: 135, lat: -28}, 3); }"))) %>%
-#         fitBounds(Ausminx, Ausminy, Ausmaxx, Ausmaxy) %>%
-#         
-#         addMarkers(data = RV$SoilSites, lng = ~Longitude, lat = ~Latitude, 
-#                    layerId=~paste0(DataSet, ' - ', Location_ID),
-#                    label = ~paste0(DataSet, ' - ', Location_ID),
-#                    clusterOptions = markerClusterOptions()
-#         )
-# 
-#     })
-#     
-#     observeEvent(input$UI_compareMap_marker_click, { # update the map markers and view on location selectInput changes
-#       
-#       p <- input$UI_compareMap_marker_click
-#       if(is.null(p))
-#         return()
-#       
-#       print(p)
-#       
-#       bits <- str_split(p, ' - ')
-#       dataset <- bits[[1]][1]
-#       sid <- bits[[1]][2]
-#       print(head( RV$SoilSites))
-#       
-#     #siteRec <-  RV$SoilSites[RV$SoilSites$DataSet==dataset & RV$SoilSites$Location_ID,] 
-#     sx <- p$lng
-#     sy <- p$lat 
-#     
-#     updateF7Progress(id = "UI_comparepg1", value = (10))
-#      sdf <- fromJSON(paste0("https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Locations?longitude=", sx,"&latitude=", sy ,"&propertytype=LaboratoryMeasurement&closest=20&usr=TrustedDemo&key=jvdn64df"))
-# 
-#    print(sdf)
-# 
-# 
-#       odf<-data.frame()
-#       for (i in 1:nrow(sdf)) {
-#         print(i)
-#         rec <- sdf[i,]
-#         url <- paste0('https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?DataSet=', rec$DataSet ,'&siteid=', rec$Location_ID ,'&propertytype=LaboratoryMeasurement&tabletype=narrow&usr=TrustedDemo&key=jvdn64df')
-#         df <- fromJSON(URLencode(url))
-#         if(is.null(df$error)){
-#           #idxs <- which(df$ObservedProperty=='4A1' & df$UpperDepth==0)
-#           if(nrow(df)>0){
-#             odf<-rbind(odf, df)
-#             updateF7Progress(id = "UI_comparepg1", value = (i*5))
-#           }
-#         }
-#       }
-#       
-#       updateF7Progress(id = "UI_comparepg1", value = 0)
-# 
-#       idxs <- which(odf$UpperDepth==0)
-#       obs = as.data.frame(odf[idxs,] %>% group_by(ObservedProperty)  %>% summarise(n()))
-#       idxxs <- which(obs[,2] >= 5)
-#       obsToDo <- obs[idxxs,]
-# print(obsToDo)
-#       # vals <- as.numeric(odf[odf$UpperDepth==0 & odf$ObservedProperty == '4A1', ]$Value)
-#       # boxplot(vals, col = 'green')
-#       # stripchart(8.5, cex=5, pch = 18, col = 'red', vertical = TRUE, add = TRUE)
-#       
-#     })
+##    
+    #### Render the compare map   #################################
+    output$UI_compareMap <- renderLeaflet({
+
+
+      mc <-leaflet() %>%
+        clearMarkers() %>%
+        addTiles(group = "Map") %>%
+        addProviderTiles("Esri.WorldImagery", options = providerTileOptions(noWrap = F), group = "Satellite") %>%
+        addMouseCoordinates()  %>%
+        addEasyButton(easyButton(
+          icon="fa-globe", title="Zoom to full extent",
+          onClick=JS("function(btn, map){ map.setView({lon: 135, lat: -28}, 3); }"))) %>%
+        fitBounds(Ausminx, Ausminy, Ausmaxx, Ausmaxy) %>%
+        
+        addMarkers(data = RV$SoilSites, lng = ~Longitude, lat = ~Latitude,
+                   layerId=~paste0(DataSet, ' - ', Location_ID),
+                   label = ~paste0(DataSet, ' - ', Location_ID),
+                   clusterOptions = markerClusterOptions()
+        ) %>%
+        
+        addControlGPS(options = gpsOptions(position = "topleft", activate = TRUE, 
+                                           autoCenter = TRUE, maxZoom = 15, 
+                                           setView = TRUE)) %>%
+        
+        addLayersControl(
+          baseGroups = c("Map", "Satellite"),
+          options = layersControlOptions(collapsed = FALSE)
+        ) %>% hideGroup("Map") %>% showGroup( "Satellite")
+
+    })
+
+    
+    ####  Get the soil data for comparisons   #######
+    observeEvent(input$UI_compareMap_marker_click, { # update the map markers and view on location selectInput changes
+
+      p <- input$UI_compareMap_marker_click
+      if(is.null(p))
+        return()
+
+      print(p)
+
+      bits <- str_split(p, ' - ')
+      dataset <- bits[[1]][1]
+      sid <- bits[[1]][2]
+      print(head( RV$SoilSites))
+
+      if(!devel){
+
+    sx <- p$lng
+    sy <- p$lat
+
+    updateF7Progress(id = "UI_comparepg1", value = (10))
+     sdf <- fromJSON(paste0("https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Locations?longitude=", sx,"&latitude=", sy ,"&propertytype=LaboratoryMeasurement&closest=", NumberOfCompareSites,"&usr=TrustedDemo&key=jvdn64df"))
+
+   print(sdf)
+
+        odf<-data.frame()
+        for (i in 1:nrow(sdf)) {
+          print(i)
+          rec <- sdf[i,]
+          url <- paste0('https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?DataSet=', rec$DataSet ,'&siteid=', rec$Location_ID ,'&propertytype=LaboratoryMeasurement&tabletype=narrow&usr=TrustedDemo&key=jvdn64df')
+          df <- fromJSON(URLencode(url))
+          
+          if(is.null(df$error)){
+            if(nrow(df)>0){
+              odf<-rbind(odf, df)
+              updateF7Progress(id = "UI_comparepg1", value = (i*5))
+            }
+          }
+        }
+   }else{
+     odf <- read.csv('c:/temp/compData.csv', stringsAsFactors = F)
+   }
+      #write.csv(odf, 'c:/temp/compData.csv', row.names = F)
+
+      updateF7Progress(id = "UI_comparepg1", value = 0)
+
+      idxs <- which(odf$UpperDepth==0)
+      print(idxs)
+      obs = as.data.frame(odf[idxs,] %>% group_by(ObservedProperty)  %>% summarise(n()))
+      idxxs <- which(obs[,2] >= 1)
+      obsToDo <- obs[idxxs,]
+      RVC$BoxPlotData <- as.numeric(odf[odf$UpperDepth==0 & odf$ObservedProperty == '4A1', ]$Value)
+    })
     
     
+    
+    output$UI_compareBoxPlot <- renderPlot({
+      print("BoxPlot")
+      
+      print(RVC$BoxPlotData)
+      req(RVC$BoxPlotData)
+     # isolate(title <- input$UI_SoilProps)
+      plotBoxPlot(vals=RVC$BoxPlotData, obsVal=6, Title='Test')
+    })
     
     
   }

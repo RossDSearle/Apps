@@ -1,5 +1,6 @@
 library(terra)
 library(dplyr)
+library(jsonlite)
 
 
 
@@ -24,7 +25,7 @@ df
 sx=130.0567 
 sy=-29.9692
 
-sdf <- fromJSON(paste0("https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Locations?longitude=", sx,"&latitude=", sy ,"&propertytype=LaboratoryMeasurement&closest=20&usr=TrustedDemo&key=jvdn64df"))
+sdf <- fromJSON(paste0("https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Locations?longitude=", sx,"&latitude=", sy ,"&propertytype=LaboratoryMeasurement&closest=5&usr=TrustedDemo&key=jvdn64df"))
 
 sitename <- sdf[1,]$Location_ID 
 
@@ -47,6 +48,7 @@ idxs <- which(odf$UpperDepth==0)
 obs = as.data.frame(odf[idxs,] %>% group_by(ObservedProperty)  %>% summarise(n()))
 idxxs <- which(obs[,2] >= 5)
 obsToDo <- obs[idxxs,]
+obsToDo
 
 vals <- as.numeric(odf[odf$UpperDepth==0 & odf$ObservedProperty == '4A1', ]$Value)
 boxplot(vals, col = 'green')

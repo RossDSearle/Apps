@@ -29,7 +29,6 @@ getColor <- function(sites) {
 plotSoilProfileHBars <- function(inDF, xTitle){
   
   inDF$Value <- as.numeric(inDF$Value)
-  
   xBound <-  max(inDF$Value)  + (max(inDF$Value) * 0.2)
   par(oma=c(0,0,0,0)) # all sides have 3 lines of space
   par(mar=c(5,4,0,0))
@@ -38,17 +37,23 @@ plotSoilProfileHBars <- function(inDF, xTitle){
         ylab='Soil Depth (m)',
         yaxs = "i", xaxs = "i", xlim = c(0, xBound), ylim = rev(range(c(0,1.5))),
         cex.lab = 1.5,
-        
   )
   
   for (s in 1:nrow(inDF)) {
     
     x <- c(0.1, inDF$Value[s], inDF$Value[s], 0, 0)
     y =  c( inDF$LD[s],  inDF$LD[s],  inDF$UD[s],  inDF$UD[s],  inDF$LD[s])
-    polygon(x,y,
-            col=c("brown"),
-            border=c("black"),
-            lwd=1, lty=c("solid"))
+    polygon(x,y, col=c("brown"), border=c("black"), lwd=1, lty=c("solid"))
   }
   
+}
+
+
+
+#plotBoxPlot(vals=seq(1,10,1), obsVal=6, Title='Test')
+
+plotBoxPlot <- function(vals, obsVal, Title){
+  boxplot(vals, col = 'green')
+  #stripchart(5, cex=5, pch = 18, col = 'red', vertical = TRUE, add = TRUE)
+  points(c(8,4),  cex=5, pch = 18, col = 'red')
 }
