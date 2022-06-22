@@ -520,7 +520,7 @@ shiny::shinyApp(
       sid <- bits[[1]][2]
       print(head( RV$SoilSites))
 
-      if(!devel){
+if(!devel){
 
     sx <- p$lng
     sy <- p$lat
