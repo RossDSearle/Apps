@@ -1,5 +1,33 @@
 
 
+getVocabNames <- function(df, props){
+  
+  apiProps <- unique(df$ObservedProperty)
+  apiProps <- apiProps[which(!is.na(apiProps))]
+  cnames <- vector(mode = 'character', length = length(apiProps))
+  
+  for(i in 1:length(apiProps)){
+    rec <- props[props$Property==apiProps[i],]
+    if(nrow(rec)>0){
+      if( rec$VocabURL==''){
+        propName = rec$Description
+      }else{
+        
+        SVARoot <- vocPaths[vocPaths$vocTypes==rec$PropertyType,]$vocURL
+        vurl <- paste0(SVARoot,'?uri=',rec$VocabURL)
+        js <- fromJSON(vurl)
+        propName <- js$result$primaryTopic$prefLabel$'_value'
+      }
+    }
+    cnames[i] <- propName
+  }
+  cnames <- cnames[nzchar(cnames)] #removes blanks
+  pdf <- data.frame(LabMethod=apiProps, VocName=cnames)
+  return(pdf)
+}
+
+
+
 getSoilSiteData <- function(siteID){
   
   bits <- str_split(siteID, ' - ')
@@ -55,5 +83,5 @@ plotSoilProfileHBars <- function(inDF, xTitle){
 plotBoxPlot <- function(vals, obsVal, Title){
   boxplot(vals, col = 'green')
   #stripchart(5, cex=5, pch = 18, col = 'red', vertical = TRUE, add = TRUE)
-  points(c(8,4),  cex=5, pch = 18, col = 'red')
+  points(c(obsVal,4),  cex=5, pch = 18, col = 'red')
 }

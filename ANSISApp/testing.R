@@ -118,3 +118,17 @@ for(i in 1:length(apiProps)){
   }
   cnames[i] <- propName
 }
+
+
+
+
+
+
+
+library(reshape2)
+library(ggplot2)
+df <- read.csv("TestData.csv", header=T)
+df.m <- melt(df, id.var = "Label")
+
+ggplot(data = df.m, aes(x=Label, y=value)) + 
+  geom_boxplot() + facet_wrap(~variable,ncol = 4)

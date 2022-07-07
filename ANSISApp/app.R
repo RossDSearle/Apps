@@ -10,6 +10,7 @@ library(rhandsontable)
 library(shiny.pwa)
 library(shinybusy)
 library(dplyr)
+library(shinyWidgets)
 
 
 machineName <- as.character(Sys.info()['nodename'])
@@ -38,6 +39,8 @@ if(devel){
 
 ########    USER INTERFACE  ########################################
 ####  .  ####
+
+######  UI initilise   ####### 
 
 shiny::shinyApp(
   ui = f7Page(
@@ -82,20 +85,19 @@ shiny::shinyApp(
           icon = f7Icon("layers_fill"),
           active = TRUE,
           
+######  UI Get data for 1 site   #######       
       
-      f7Float(
+f7Float(
         side = "left",
-          tags$div( style=paste0("width: ", defWidth),  
+          #tags$div( style=paste0("width: ", defWidth),  
+          tags$div(  
                     f7Card(
                       outline = F,
                       title = NULL,
                       HTML('Select a soil site marker to show data'),
-                      shinycssloaders::withSpinner(leafletOutput("mainMap", height = 470, width = defWidth)),
+                      shinycssloaders::withSpinner(leafletOutput("mainMap", height = 470, width = defWidth), hide.ui = FALSE),
                       HTML('<BR>'),
-                      # f7Block(
-                      #   f7Progress(id = "pg1", value = 10, color = "blue")
-                      # ),
-                      HTML('<BR>'),
+                      HTML('<BR>')
                     ),
                     uiOutput("card_SoilPropertyData"), # This card is dynamically changed below based on the device
                    
@@ -107,7 +109,7 @@ shiny::shinyApp(
               )
          # )
         )),
-      
+######  UI Compare Soil Sites   ####### 
       f7Tab(
         tabName = "Compare",
         icon = f7Icon("fa-street-view"),
@@ -127,6 +129,15 @@ shiny::shinyApp(
                     f7Progress(id = "UI_comparepg1", value = 0, color = "blue")
                   ),
                   HTML('<BR>'),
+                  #textOutput('UI_compareProgText'),
+                  progressBar(
+                    id = "pb",
+                    value = 0,
+                    total = NumberOfCompareSites,
+                    title = "",
+                    display_pct = F
+                  ),
+                  
                 ),
                 uiOutput("card_compareSoilPropertyData"), # This card is dynamically changed below based on the device
                 
@@ -138,7 +149,9 @@ shiny::shinyApp(
         )
       )),
      
-     
+
+
+####  Javascript   #######     
       tags$head(tags$script(
         'Shiny.addCustomMessageHandler("scrollToBottom",
                                   function(NULL) {
@@ -177,7 +190,7 @@ shiny::shinyApp(
   ),
 
   
-  
+  ####___________________________________####
   #######   SERVER CODE  ###########  
  
   
@@ -196,7 +209,7 @@ shiny::shinyApp(
     RV$WaitText=NULL
     
     
-    ##### _ #### 
+    ##### ___________________________ #### 
     #### Render Dynamic GUI  ###########
     
      output$card_SoilPropertyData <- renderUI({
@@ -247,7 +260,7 @@ shiny::shinyApp(
      })
    
     
-    #####   Update attribute selection list  ####
+#####   Update attribute selection list  ####
     observe({
       req(RV$CurrentSiteInfo)
       {
@@ -255,50 +268,26 @@ shiny::shinyApp(
           
           df <- RV$CurrentSiteInfo
           
-          apiProps <- unique(df$ObservedProperty)
-          apiProps <- apiProps[which(!is.na(apiProps))]
-          cnames <- vector(mode = 'character', length = length(apiProps))
-          
-          for(i in 1:length(apiProps)){
-            rec <- props[props$Property==apiProps[i],]
-            if(nrow(rec)>0){
-              if( rec$VocabURL==''){
-                propName = rec$Description
-              }else{
-                
-                SVARoot <- vocPaths[vocPaths$vocTypes==rec$PropertyType,]$vocURL
-                vurl <- paste0(SVARoot,'?uri=',rec$VocabURL)
-                js <- fromJSON(vurl)
-                propName <- js$result$primaryTopic$prefLabel$'_value'
-              }
-            }
-            cnames[i] <- propName
-          }
-          cnames <- cnames[nzchar(cnames)] #removes blanks
-          RV$CurrentProps <- data.frame(LabMethod=apiProps, VocName=cnames)
+          pdf = getVocabNames(df, props)
+          RV$CurrentProps <- pdf
+          print(pdf)
           
           if(input$deviceInfo$desktop) {
-            updateSelectInput(inputId = 'UI_SoilProps', choices = cnames)
+            updateSelectInput(inputId = 'UI_SoilProps', choices = as.character(pdf$VocName))
           }else{
-            updateF7Picker(inputId = 'UI_SoilProps', choices = cnames)
+            updateF7Picker(inputId = 'UI_SoilProps', choices = as.character(pdf$VocName))
           }
 
-          cnames[i] <- propName
+         # cnames[i] <- propName
         }
-        cnames <- cnames[nzchar(cnames)] #removes blanks
-        RV$CurrentProps <- data.frame(LabMethod=apiProps, VocName=cnames)
-        
-        #print(paste0('Combo Value is ', input$UI_SoilProps))
-       
-        
-        if(input$deviceInfo$desktop) {
-        updateSelectInput(inputId = 'UI_SoilProps', choices = cnames)
-        }else{
-          # cnames<-c("Total S - X-ray fluorescence", "Calcium phosphate-extractable S - ICPAES")
-          # print(cnames)
-          updateF7Picker(inputId = 'UI_SoilProps', choices = cnames, value = cnames[1],)
-
-        }
+        # cnames <- cnames[nzchar(cnames)] #removes blanks
+        # RV$CurrentProps <- data.frame(LabMethod=apiProps, VocName=cnames)
+        # 
+        # if(input$deviceInfo$desktop) {
+        # updateSelectInput(inputId = 'UI_SoilProps', choices = cnames)
+        # }else{
+        #   updateF7Picker(inputId = 'UI_SoilProps', choices = cnames, value = cnames[1],)
+        # }
       }
     })
     
@@ -430,7 +419,7 @@ shiny::shinyApp(
     
     
        
-####_####    
+####_______________________________####    
 ########################################   Compare Site To Surrounding Sites  #####################################
     ####_####  
     
@@ -440,6 +429,7 @@ shiny::shinyApp(
     RVC$compareCurrentSiteHeader=NULL
     RVC$compareCurrentProps=NULL
     RVC$BoxPlotData=NULL
+    RVC$CompareCurrentSite=NULL
 
 ########   Render Dynamic UI  #################################################
     output$card_compareSoilPropertyData <- renderUI({
@@ -513,26 +503,35 @@ shiny::shinyApp(
       if(is.null(p))
         return()
 
-      print(p)
-
       bits <- str_split(p, ' - ')
       dataset <- bits[[1]][1]
       sid <- bits[[1]][2]
-      print(head( RV$SoilSites))
 
-if(!devel){
+#if(!devel){
 
     sx <- p$lng
     sy <- p$lat
 
     updateF7Progress(id = "UI_comparepg1", value = (10))
-     sdf <- fromJSON(paste0("https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Locations?longitude=", sx,"&latitude=", sy ,"&propertytype=LaboratoryMeasurement&closest=", NumberOfCompareSites,"&usr=TrustedDemo&key=jvdn64df"))
-
-   print(sdf)
-
+    updateProgressBar(
+      session = session,
+      id = "pb",
+      value = 2, 
+      total = NumberOfCompareSites,
+      title = paste0('Finding the ', NumberOfCompareSites, ' closest soil data sites...')
+    )
+     sdf <- fromJSON(paste0("https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Locations?longitude=", sx,"&latitude=", sy ,"&propertytype=LaboratoryMeasurement&closest=", NumberOfCompareSites+1,"&usr=TrustedDemo&key=jvdn64df"))
+     rec <- sdf[1,]
+     url <- paste0('https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?DataSet=', rec$DataSet ,'&siteid=', rec$Location_ID ,'&propertytype=LaboratoryMeasurement&tabletype=narrow&usr=TrustedDemo&key=jvdn64df')
+     #print(url)
+     ccdf <- fromJSON(URLencode(url))
+     
+     RVC$CompareCurrentSite <- ccdf
+     #print(ccdf)
+     
         odf<-data.frame()
-        for (i in 1:nrow(sdf)) {
-          print(i)
+        for (i in 2:nrow(sdf)) {
+
           rec <- sdf[i,]
           url <- paste0('https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?DataSet=', rec$DataSet ,'&siteid=', rec$Location_ID ,'&propertytype=LaboratoryMeasurement&tabletype=narrow&usr=TrustedDemo&key=jvdn64df')
           df <- fromJSON(URLencode(url))
@@ -540,36 +539,92 @@ if(!devel){
           if(is.null(df$error)){
             if(nrow(df)>0){
               odf<-rbind(odf, df)
-              updateF7Progress(id = "UI_comparepg1", value = (i*5))
+              updateF7Progress(id = "UI_comparepg1", value = (i*as.integer(100/NumberOfCompareSites)))
+              
+              updateProgressBar(
+                session = session,
+                id = "pb",
+                value = i, 
+                total = NumberOfCompareSites,
+                title = paste("Getting data from ", rec$Location_ID)
+              )
+              
             }
           }
         }
-   }else{
-     
-     odf <- read.csv(paste0(appRootDir,'/Data/tmp/compData.csv'), stringsAsFactors = F)
-     
-   }
+   # }else{
+   #   
+   #   odf <- read.csv(paste0(appRootDir,'/Data/tmp/compData.csv'), stringsAsFactors = F)
+   #   
+   # }
       #write.csv(odf, 'c:/temp/compData.csv', row.names = F)
 
       updateF7Progress(id = "UI_comparepg1", value = 0)
+      updateProgressBar(
+        session = session,
+        id = "pb",
+        value = 0, 
+        total = NumberOfCompareSites,
+        title = ''
+      )
 
       idxs <- which(odf$UpperDepth==0)
-      print(idxs)
-      obs = as.data.frame(odf[idxs,] %>% group_by(ObservedProperty)  %>% summarise(n()))
-      idxxs <- which(obs[,2] >= 1)
-      obsToDo <- obs[idxxs,]
-      RVC$BoxPlotData <- as.numeric(odf[odf$UpperDepth==0 & odf$ObservedProperty == '4A1', ]$Value)
+      
+      
+      RVC$AllSiteInfo <- odf[idxs,]
+      # obs = as.data.frame(odf[idxs,] %>% group_by(ObservedProperty)  %>% summarise(n()))
+      # print(obs)
+      # idxxs <- which(obs[,2] >= 1)
+      # obsToDo <- obs[idxxs,]
+      # RVC$BoxPlotData <- as.numeric(odf[odf$UpperDepth==0 & odf$ObservedProperty == '4A1', ]$Value)
     })
     
     
+#######   Update Compare items combo choices  ###############
+    observe({
+      req(RVC$CompareCurrentSite)
+      siteProps <- unique(RVC$CompareCurrentSite[RVC$CompareCurrentSite$UpperDepth==0,]$ObservedProperty)
+      #print(siteProps)
+      siteProps <- siteProps[!is.na(siteProps)]
+      if(input$deviceInfo$desktop) {
+        updateSelectInput(inputId = 'UI_compareSoilProps', choices = as.character(siteProps))
+      }else{
+        updateF7Picker(inputId = 'UI_compareSoilProps', choices = as.character(siteProps))
+      }
+    })
     
+
+     
+    
+####### Plot the BoxPlot  #######    
     output$UI_compareBoxPlot <- renderPlot({
-      print("BoxPlot")
+      req(input$UI_compareSoilProps, RVC$CompareCurrentSite)
+      if(input$UI_compareSoilProps != 'None'){
+        
+        #siteData <- RVC$CompareCurrentSite
+       # print(RVC$CompareCurrentSite)
+        
+        idx <- which(RVC$CompareCurrentSite$UpperDepth==0 & RVC$CompareCurrentSite$ObservedProperty == input$UI_compareSoilProps)
+        siteVal <- as.numeric(RVC$CompareCurrentSite[idx,]$Value)
+        print(siteVal)
+        idxs <- which(RVC$AllSiteInfo$UpperDepth==0 & RVC$AllSiteInfo$ObservedProperty == input$UI_compareSoilProps)
+        bpData=as.numeric(RVC$AllSiteInfo[idxs,]$Value)
+        print(bpData)
+       plotBoxPlot(vals=bpData, obsVal=siteVal, Title='Test')
+        
+        
+      }
+    })
+    
+#####  Render the Compare All site data table #####
+    output$UI_compareAllSiteInfo = renderRHandsontable({
+      req(RVC$AllSiteInfo)
       
-      print(RVC$BoxPlotData)
-      req(RVC$BoxPlotData)
-     # isolate(title <- input$UI_SoilProps)
-      plotBoxPlot(vals=RVC$BoxPlotData, obsVal=6, Title='Test')
+      if(nrow(RVC$AllSiteInfo) > 0){
+        df <- RVC$AllSiteInfo
+        odf <- data.frame(siteID=df$Location_ID, UD=df$UpperDepth, LD=df$LowerDepth, Property=df$ObservedProperty, Value=df$Value, Units=df$Units)
+        rhandsontable(odf,   manualColumnResize = T, readOnly = TRUE, rowHeaders = F)
+      }
     })
     
     

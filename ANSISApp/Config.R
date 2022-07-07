@@ -28,7 +28,7 @@ Ausminy <-  -43.735
 Ausmaxx <- 154.005
 Ausmaxy <- -9.005
 
-NumberOfCompareSites = 20
+NumberOfCompareSites = 10
 
 
 
