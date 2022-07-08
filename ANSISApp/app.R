@@ -442,8 +442,9 @@ f7Float(
           selectInput('UI_compareSoilProps', label ='', choices = c('None'), width = defWidth),
           htmlOutput('UI_compareSoilInfoHeader'),
           plotOutput('UI_compareBoxPlot'),
-          HTML('<BR><BR>'),
-          #rHandsontableOutput('UI_SiteInfo' )
+          htmlOutput('UI_compareSoilInfoSummary'),
+          HTML('<BR>'),
+          rHandsontableOutput('UI_comparePropInfo' )
         )
       }else{
         f7Card(
@@ -451,8 +452,9 @@ f7Float(
           f7Picker(inputId='UI_compareSoilProps', label ='Soil Property', choices = c('None', 'None.'), placeholder = "Soil property values", openIn = "auto", value='None'), ## weird bug - you need to pecify a blank list to get the list items update to work
           htmlOutput('UI_compareSoilInfoHeader'),
           plotOutput('UI_compareBoxPlot'),
-          HTML('<BR><BR>'),
-          #rHandsontableOutput('UI_SiteInfo' )
+          htmlOutput('UI_compareSoilInfoSummary'),
+          HTML('<BR>'),
+          rHandsontableOutput('UI_comparePropInfo' )
         )
       }
     })
@@ -601,27 +603,45 @@ f7Float(
       req(input$UI_compareSoilProps, RVC$CompareCurrentSite)
       if(input$UI_compareSoilProps != 'None'){
         
-        #siteData <- RVC$CompareCurrentSite
-       # print(RVC$CompareCurrentSite)
-        
         idx <- which(RVC$CompareCurrentSite$UpperDepth==0 & RVC$CompareCurrentSite$ObservedProperty == input$UI_compareSoilProps)
         siteVal <- as.numeric(RVC$CompareCurrentSite[idx,]$Value)
         print(siteVal)
         idxs <- which(RVC$AllSiteInfo$UpperDepth==0 & RVC$AllSiteInfo$ObservedProperty == input$UI_compareSoilProps)
-        bpData=as.numeric(RVC$AllSiteInfo[idxs,]$Value)
-        print(bpData)
+        propData <- RVC$AllSiteInfo[idxs,]
+        RVC$compareCurrentProps <- propData
+        bpData=as.numeric(propData$Value)
+        output$UI_compareSoilInfoSummary <- renderText({ paste0("Selected site value = ", siteVal, 
+                                                                "<BR>No. Sites = ", nrow(propData),
+                                                                 "<BR>Mean = ", mean(bpData),
+                                                                 "<BR>Maximum = ", max(bpData),
+                                                                 "<BR>Minimum = ", min(bpData)
+                                                                )})
+        
        plotBoxPlot(vals=bpData, obsVal=siteVal, Title='Test')
         
         
       }
     })
     
-#####  Render the Compare All site data table #####
+    
+    
+#####  Render the property data table #####
     output$UI_compareAllSiteInfo = renderRHandsontable({
-      req(RVC$AllSiteInfo)
+      req()
       
       if(nrow(RVC$AllSiteInfo) > 0){
         df <- RVC$AllSiteInfo
+        odf <- data.frame(siteID=df$Location_ID, UD=df$UpperDepth, LD=df$LowerDepth, Property=df$ObservedProperty, Value=df$Value, Units=df$Units)
+        rhandsontable(odf,   manualColumnResize = T, readOnly = TRUE, rowHeaders = F)
+      }
+    })
+    
+#####  Render the Compare All site data table #####
+    output$UI_comparePropInfo = renderRHandsontable({
+      req(RVC$compareCurrentProps)
+      
+      if(nrow(RVC$compareCurrentProps) > 0){
+        df <- RVC$compareCurrentProps
         odf <- data.frame(siteID=df$Location_ID, UD=df$UpperDepth, LD=df$LowerDepth, Property=df$ObservedProperty, Value=df$Value, Units=df$Units)
         rhandsontable(odf,   manualColumnResize = T, readOnly = TRUE, rowHeaders = F)
       }
