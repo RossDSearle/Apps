@@ -59,7 +59,10 @@ shiny::shinyApp(
     busy_start_up(
       loader = tags$img(src = "SplashScreen2.png", width = 200),
       text =  "Please wait while we rangle over 60,000 soil profiles for you .....",
-      mode = "manual"
+      #mode = "manual",
+      #mode = "timeout",
+      mode = "auto"
+      #timeout = 20000
     ),
     
    #add_busy_bar(timeout = 1000,     color = "#112446",     centered = FALSE,     height = "18px"   ),
@@ -160,6 +163,14 @@ f7Float(
                                     var element = document.getElementById("UI_SoilProfilePlot");
                                     element.scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"});
                                     // alert("Here");
+                                  });
+        Shiny.addCustomMessageHandler("scrollToBottomCompare",
+                                  function(NULL) {
+                                 
+                                   //  window.scrollTo(0, document.body.scrollHeight || document.documentElement.scrollHeight);
+                                    var element = document.getElementById("UI_compareBoxPlot");
+                                    element.scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"});
+                                    // alert("Here");
                                   });'
       )),
       
@@ -244,6 +255,7 @@ f7Float(
     
     observeEvent(once = TRUE,ignoreNULL = FALSE, ignoreInit = FALSE, eventExpr = RV$SoilSites, {
       if(devel){
+        print(paste0('App is running in development mode'))
         RV$SoilSites <- read.csv(paste0(appRootDir,'/Data/soilSites.csv'), stringsAsFactors = F)
       }else{
         url <- paste0(APIRoot, "/Site_Locations?DataSets=NatSoil&propertytype=LaboratoryMeasurement&bbox=", Ausminx,";", Ausmaxx,";", Ausminy,";", Ausmaxy, Auth)
@@ -372,7 +384,7 @@ f7Float(
     ##### Render the main map  ####
     output$mainMap <- renderLeaflet({
       
-      remove_start_up(timeout = 200)
+     # remove_start_up(timeout = 200)
       
       m <-leaflet() %>%
         clearMarkers() %>%
@@ -504,7 +516,11 @@ f7Float(
       p <- input$UI_compareMap_marker_click
       if(is.null(p))
         return()
-
+      
+      
+      session$sendCustomMessage(type="scrollToBottom",message=list(NULL))
+      
+print(p)
       bits <- str_split(p, ' - ')
       dataset <- bits[[1]][1]
       sid <- bits[[1]][2]
@@ -627,7 +643,7 @@ f7Float(
     
 #####  Render the property data table #####
     output$UI_compareAllSiteInfo = renderRHandsontable({
-      req()
+      req(RVC$AllSiteInfo)
       
       if(nrow(RVC$AllSiteInfo) > 0){
         df <- RVC$AllSiteInfo
