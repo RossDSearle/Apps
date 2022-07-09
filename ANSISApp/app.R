@@ -11,6 +11,7 @@ library(shiny.pwa)
 library(shinybusy)
 library(dplyr)
 library(shinyWidgets)
+library(shinyalert)
 
 
 machineName <- as.character(Sys.info()['nodename'])
@@ -46,7 +47,8 @@ shiny::shinyApp(
   ui = f7Page(
     #options = list(dark = F, pullToRefresh = TRUE),
     options = list(dark = F),
-    title = NULL,
+    title = AppName,
+    tags$head(tags$link( rel="icon", type="image/png", href="ANSISAppLogo.png", sizes="32x32" )),
     
     allowPWA = F,  ## This turns off F7s default PWA generation and we use shiny.pwa as per below
     
@@ -106,7 +108,8 @@ f7Float(
                    
                     f7Card(
                       title = "All Profile Data",
-                      rHandsontableOutput('UI_AllSiteInfo')
+                      rHandsontableOutput('UI_AllSiteInfo'),
+                      HTML('<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>')
                     )
                     
               )
@@ -146,7 +149,8 @@ f7Float(
                 
                 f7Card(
                   title = "All Profile Data",
-                  rHandsontableOutput('UI_compareAllSiteInfo' )
+                  rHandsontableOutput('UI_compareAllSiteInfo' ),
+                  HTML('<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>')
                 )
             )
         )
@@ -223,10 +227,32 @@ f7Float(
     ##### ___________________________ #### 
     #### Render Dynamic GUI  ###########
     
+    observe({
+      
+      
+      req(input$deviceInfo$desktop)
+      if(input$deviceInfo$desktop){
+        print("RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR")
+        shinyalert(title = "For Your Info", type = "info", 
+                   html=T,
+                   text='We noticed you are running this Web App on your PC web browser. 
+                   That is fine but it is optimised for viewing on mobile devices so it may look a little weird on your PC. 
+                   Copy and paste this URL into your mobile device browser to install it as a Web App.')
+      # report_info(
+      #   title= 'FYI',
+      #   text = 'This web App' ,
+      #   button = "Ok",
+      #   # type = "info",
+      #   session = session
+      # )
+      }
+    })
+    
      output$card_SoilPropertyData <- renderUI({
        req(input$deviceInfo)
        
       if(input$deviceInfo$desktop) {
+       
        
         f7Card(
           title = NULL,
@@ -518,7 +544,7 @@ f7Float(
         return()
       
       
-      session$sendCustomMessage(type="scrollToBottom",message=list(NULL))
+      session$sendCustomMessage(type="scrollToBottomCompare",message=list(NULL))
       
 print(p)
       bits <- str_split(p, ' - ')
