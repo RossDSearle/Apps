@@ -232,11 +232,11 @@ f7Float(
       
       req(input$deviceInfo$desktop)
       if(input$deviceInfo$desktop){
-        print("RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR")
+        
         shinyalert(title = "For Your Info", type = "info", 
                    html=T,
                    text='We noticed you are running this Web App on your PC web browser. 
-                   That is fine but it is optimised for viewing on mobile devices so it may look a little weird on your PC. 
+                   That is fine, but it is optimised for viewing on mobile devices so it may look a little weird on your PC. 
                    Copy and paste this URL into your mobile device browser to install it as a Web App.')
       # report_info(
       #   title= 'FYI',
@@ -308,12 +308,16 @@ f7Float(
           
           pdf = getVocabNames(df, props)
           RV$CurrentProps <- pdf
-          print(pdf)
+          print("here1")
           
           if(input$deviceInfo$desktop) {
             updateSelectInput(inputId = 'UI_SoilProps', choices = as.character(pdf$VocName))
           }else{
-            updateF7Picker(inputId = 'UI_SoilProps', choices = as.character(pdf$VocName))
+            
+            #dddd <- c('Ross','b', 'c')
+            #print(str(dddd))
+            updateF7Picker(inputId = 'UI_SoilProps',  choices = pdf$VocName, session = session)
+            updateF7Picker(inputId = 'UI_SoilProps', value=pdf$VocName[1], session = session)
           }
 
          # cnames[i] <- propName
