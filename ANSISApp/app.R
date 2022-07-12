@@ -576,9 +576,9 @@ tags$style(type='text/css', "#UI_compareSoilProps-label  { font-size: 20px; line
       total = NumberOfCompareSites,
       title = paste0('Finding the ', NumberOfCompareSites, ' closest soil data sites...')
     )
-     sdf <- fromJSON(paste0("https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Locations?longitude=", sx,"&latitude=", sy ,"&propertytype=LaboratoryMeasurement&closest=", NumberOfCompareSites+1,"&usr=TrustedDemo&key=jvdn64df"))
+     sdf <- fromJSON(paste0("https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Locations?longitude=", sx,"&latitude=", sy ,"&propertytype=LaboratoryMeasurement&closest=", NumberOfCompareSites+1,Auth))
      rec <- sdf[1,]
-     url <- paste0('https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?DataSet=', rec$DataSet ,'&siteid=', rec$Location_ID ,'&propertytype=LaboratoryMeasurement&tabletype=narrow&usr=TrustedDemo&key=jvdn64df')
+     url <- paste0('https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?DataSet=', rec$DataSet ,'&siteid=', rec$Location_ID ,'&propertytype=LaboratoryMeasurement&tabletype=narrow', Auth)
      ccdf <- fromJSON(URLencode(url))
      
      RVC$CompareCurrentSite <- ccdf
@@ -587,7 +587,7 @@ tags$style(type='text/css', "#UI_compareSoilProps-label  { font-size: 20px; line
         for (i in 2:nrow(sdf)) {
 
           rec <- sdf[i,]
-          url <- paste0('https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?DataSet=', rec$DataSet ,'&siteid=', rec$Location_ID ,'&propertytype=LaboratoryMeasurement&tabletype=narrow&usr=TrustedDemo&key=jvdn64df')
+          url <- paste0('https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?DataSet=', rec$DataSet ,'&siteid=', rec$Location_ID ,'&propertytype=LaboratoryMeasurement&tabletype=narrow', Auth)
           df <- fromJSON(URLencode(url))
           
           if(is.null(df$error)){
