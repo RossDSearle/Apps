@@ -7,7 +7,7 @@ if(machineName=='soils-discovery'){
 }
 
 AppName = 'ANSISApp'
-Auth = '&usr=TrustedDemo&key=jvdn64df'
+Auth = '&usr=ANSISApp&key=gfvs64kklxqa1222ke#2@'
 
 APIRoot <- 'https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI'
 

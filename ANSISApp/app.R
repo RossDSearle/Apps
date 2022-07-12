@@ -177,30 +177,39 @@ f7Float(
                                     // alert("Here");
                                   });'
       )),
+
+#  tags$style(".shinybusy-ready {z-index: 9995 !important;}"),
+
+# tags$head(tags$script('
+#  $(document).ready(function () {
+#    navigator.geolocation.getCurrentPosition(onSuccess, onError);
+#          
+#    function onError (err) {
+#      Shiny.onInputChange("geolocation", false);
+#    }
+#          
+#    function onSuccess (position) {
+#      setTimeout(function () {
+#        var coords = position.coords;
+#        console.log(coords.latitude + ", " + coords.longitude);
+#        Shiny.onInputChange("geolocation", true);
+#        Shiny.onInputChange("lat", coords.latitude);
+#        Shiny.onInputChange("long", coords.longitude);
+#      }, 1100)
+#    }
+#  });
+#          ')      )
       
+
+####  CSS   #######
       tags$style('.progressbar {height: 15px;}'),
-      
-    #  tags$style(".shinybusy-ready {z-index: 9995 !important;}"),
-      
-      # tags$head(tags$script('
-      #  $(document).ready(function () {
-      #    navigator.geolocation.getCurrentPosition(onSuccess, onError);
-      #          
-      #    function onError (err) {
-      #      Shiny.onInputChange("geolocation", false);
-      #    }
-      #          
-      #    function onSuccess (position) {
-      #      setTimeout(function () {
-      #        var coords = position.coords;
-      #        console.log(coords.latitude + ", " + coords.longitude);
-      #        Shiny.onInputChange("geolocation", true);
-      #        Shiny.onInputChange("lat", coords.latitude);
-      #        Shiny.onInputChange("long", coords.longitude);
-      #      }, 1100)
-      #    }
-      #  });
-      #          ')      )
+
+# format the select inputs 
+tags$style(type='text/css', "#UI_SoilProps-label  { font-size: 20px; line-height: 20px; font-weight: bold; color: #784305} 
+                            #UI_SoilProps { font-size: 20px; font-weight: bold; line-height: 20px; border-width: 1px; border-style: solid;border-color: lightgrey;padding: 5px; border-radius: 10px }"),
+
+tags$style(type='text/css', "#UI_compareSoilProps-label  { font-size: 20px; line-height: 20px; font-weight: bold; color: #784305} 
+                            #UI_compareSoilProps { font-size: 20px; font-weight: bold; line-height: 20px; border-width: 1px; border-style: solid;border-color: lightgrey;padding: 5px; border-radius: 10px }"),
     )
   ),
 
@@ -225,11 +234,9 @@ f7Float(
     
     
     ##### ___________________________ #### 
-    #### Render Dynamic GUI  ###########
+    #### Check if running on mobile device  ###########
     
     observe({
-      
-      
       req(input$deviceInfo$desktop)
       if(input$deviceInfo$desktop){
         
@@ -238,45 +245,38 @@ f7Float(
                    text='We noticed you are running this Web App on your PC web browser. 
                    That is fine, but it is optimised for viewing on mobile devices so it may look a little weird on your PC. 
                    Copy and paste this URL into your mobile device browser to install it as a Web App.')
-      # report_info(
-      #   title= 'FYI',
-      #   text = 'This web App' ,
-      #   button = "Ok",
-      #   # type = "info",
-      #   session = session
-      # )
       }
     })
     
+    
+    #### Render Dynamic GUI  ###########
      output$card_SoilPropertyData <- renderUI({
        req(input$deviceInfo)
        
-      if(input$deviceInfo$desktop) {
-       
-       
+      # if(input$deviceInfo$desktop) {
+      #  
+      #   f7Card(
+      #     title = NULL,
+      #     selectInput('UI_SoilProps', label ='', choices = c('None'), width = defWidth),
+      #     htmlOutput('UI_SoilInfoHeader'),
+      #     shinycssloaders::withSpinner( htmlOutput('UI_wait')),
+      #     plotOutput('UI_SoilProfilePlot'),
+      #     HTML('<BR><BR>'),
+      #     rHandsontableOutput('UI_SiteInfo' )
+      #   )
+      # }else{
         f7Card(
           title = NULL,
-          selectInput('UI_SoilProps', label ='', choices = c('None'), width = defWidth),
-          htmlOutput('UI_SoilInfoHeader'),
-          shinycssloaders::withSpinner( htmlOutput('UI_wait')),
-          plotOutput('UI_SoilProfilePlot'),
-          HTML('<BR><BR>'),
-          rHandsontableOutput('UI_SiteInfo' )
-        )
-      }else{
-        f7Card(
-          title = NULL,
-          
-          
-          
-          f7Picker(inputId='UI_SoilProps', label ='Soil Property', choices = c('None', 'None.'), placeholder = "Soil property values", openIn = "auto", value='None'), ## weird bug - you need to pecify a blank list to get the list items update to work
+
+          selectInput('UI_SoilProps', label ='Soil Property', choices = c('None'), width = defWidth, selectize = F),
+          #f7Picker(inputId='UI_SoilProps', label ='Soil Property', choices = c('None', 'None.'), placeholder = "Soil property values", openIn = "auto", value='None',rotateEffect=F), ## weird bug - you need to pecify a blank list to get the list items update to work
           htmlOutput('UI_SoilInfoHeader'),
           shinycssloaders::withSpinner(htmlOutput('UI_wait')),
           plotOutput('UI_SoilProfilePlot'),
           HTML('<BR><BR>'),
           rHandsontableOutput('UI_SiteInfo'  )
         )
-      }
+      #}
     })
 
     
@@ -294,9 +294,15 @@ f7Float(
     
   ##### Plot profile data for an attribute ####
    output$UI_SoilProfilePlot <- renderPlot({
-     req(RV$CurrentProps,RV$CurrentPropdata)
+     req(RV$CurrentProps,RV$CurrentPropdata,input$UI_SoilProps)
+     
+     print('Checking')
+     print(RV$CurrentPropdata)
+     
+    if(input$UI_SoilProps != 'None'){
              isolate(title <- input$UI_SoilProps)
              plotSoilProfileHBars(RV$CurrentPropdata, title)
+    }
          
      })
    
@@ -311,17 +317,13 @@ f7Float(
           
           pdf = getVocabNames(df, props)
           RV$CurrentProps <- pdf
-          print("here1")
           
-          if(input$deviceInfo$desktop) {
+          #if(input$deviceInfo$desktop) {
             updateSelectInput(inputId = 'UI_SoilProps', choices = as.character(pdf$VocName))
-          }else{
-            
-            #dddd <- c('Ross','b', 'c')
-            #print(str(dddd))
-            updateF7Picker(inputId = 'UI_SoilProps',  choices = pdf$VocName, session = session)
-            updateF7Picker(inputId = 'UI_SoilProps', value=pdf$VocName[1], session = session)
-          }
+          # }else{
+          #   updateF7Picker(inputId = 'UI_SoilProps',  choices = as.character(pdf$VocName), session = session)
+          #   updateF7Picker(inputId = 'UI_SoilProps', value=pdf$VocName[1], session = session)
+          # }
 
          # cnames[i] <- propName
         }
@@ -394,7 +396,7 @@ f7Float(
           resp <- getSoilSiteData(p)
           
           if(!is.null(resp$error)){
-            f7Dialog(title = "Oops", text = resp$error)
+            f7Dialog(title = "Oops", text = "There appears to be no soil property data available at this location or you don't have access to it")
             return()
           }
           
@@ -452,6 +454,7 @@ f7Float(
       p <- input$mainMap_marker_click
         if(is.null(p))
           return()
+      updateSelectInput(inputId = 'UI_SoilProps', choices = 'None')
       RV$WaitText='Getting data'
       RV$CurrentSiteLocation <- p 
     })
@@ -480,28 +483,30 @@ f7Float(
     output$card_compareSoilPropertyData <- renderUI({
       req(input$deviceInfo)
 
-      if(input$deviceInfo$desktop) {
-
+      # if(input$deviceInfo$desktop) {
+      # 
+      #   f7Card(
+      #     title = NULL,
+      #     selectInput('UI_compareSoilProps', label ='', choices = c('None'), width = defWidth),
+      #     htmlOutput('UI_compareSoilInfoHeader'),
+      #     plotOutput('UI_compareBoxPlot'),
+      #     htmlOutput('UI_compareSoilInfoSummary'),
+      #     HTML('<BR>'),
+      #     rHandsontableOutput('UI_comparePropInfo' )
+      #   )
+      # }else{
         f7Card(
           title = NULL,
-          selectInput('UI_compareSoilProps', label ='', choices = c('None'), width = defWidth),
+          selectInput('UI_compareSoilProps', label ='Soil Property', choices = c('None'), width = '100%', selectize = F),
+          
+          #f7Picker(inputId='UI_compareSoilProps', label ='Soil Property', choices = c('None', 'None.'), placeholder = "Soil property values", openIn = "auto", value='None'), ## weird bug - you need to pecify a blank list to get the list items update to work
           htmlOutput('UI_compareSoilInfoHeader'),
           plotOutput('UI_compareBoxPlot'),
           htmlOutput('UI_compareSoilInfoSummary'),
           HTML('<BR>'),
           rHandsontableOutput('UI_comparePropInfo' )
         )
-      }else{
-        f7Card(
-          title = NULL,
-          f7Picker(inputId='UI_compareSoilProps', label ='Soil Property', choices = c('None', 'None.'), placeholder = "Soil property values", openIn = "auto", value='None'), ## weird bug - you need to pecify a blank list to get the list items update to work
-          htmlOutput('UI_compareSoilInfoHeader'),
-          plotOutput('UI_compareBoxPlot'),
-          htmlOutput('UI_compareSoilInfoSummary'),
-          HTML('<BR>'),
-          rHandsontableOutput('UI_comparePropInfo' )
-        )
-      }
+     # }
     })
 #     
 #     # observe({
@@ -553,7 +558,7 @@ f7Float(
       
       session$sendCustomMessage(type="scrollToBottomCompare",message=list(NULL))
       
-print(p)
+
       bits <- str_split(p, ' - ')
       dataset <- bits[[1]][1]
       sid <- bits[[1]][2]
@@ -574,11 +579,9 @@ print(p)
      sdf <- fromJSON(paste0("https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Locations?longitude=", sx,"&latitude=", sy ,"&propertytype=LaboratoryMeasurement&closest=", NumberOfCompareSites+1,"&usr=TrustedDemo&key=jvdn64df"))
      rec <- sdf[1,]
      url <- paste0('https://esoil.io/TERNLandscapes/SoilDataFederatoR/SoilDataAPI/Site_Data?DataSet=', rec$DataSet ,'&siteid=', rec$Location_ID ,'&propertytype=LaboratoryMeasurement&tabletype=narrow&usr=TrustedDemo&key=jvdn64df')
-     #print(url)
      ccdf <- fromJSON(URLencode(url))
      
      RVC$CompareCurrentSite <- ccdf
-     #print(ccdf)
      
         odf<-data.frame()
         for (i in 2:nrow(sdf)) {
@@ -624,7 +627,6 @@ print(p)
       
       RVC$AllSiteInfo <- odf[idxs,]
       # obs = as.data.frame(odf[idxs,] %>% group_by(ObservedProperty)  %>% summarise(n()))
-      # print(obs)
       # idxxs <- which(obs[,2] >= 1)
       # obsToDo <- obs[idxxs,]
       # RVC$BoxPlotData <- as.numeric(odf[odf$UpperDepth==0 & odf$ObservedProperty == '4A1', ]$Value)
@@ -635,7 +637,6 @@ print(p)
     observe({
       req(RVC$CompareCurrentSite)
       siteProps <- unique(RVC$CompareCurrentSite[RVC$CompareCurrentSite$UpperDepth==0,]$ObservedProperty)
-      #print(siteProps)
       siteProps <- siteProps[!is.na(siteProps)]
       if(input$deviceInfo$desktop) {
         updateSelectInput(inputId = 'UI_compareSoilProps', choices = as.character(siteProps))
@@ -654,7 +655,6 @@ print(p)
         
         idx <- which(RVC$CompareCurrentSite$UpperDepth==0 & RVC$CompareCurrentSite$ObservedProperty == input$UI_compareSoilProps)
         siteVal <- as.numeric(RVC$CompareCurrentSite[idx,]$Value)
-        print(siteVal)
         idxs <- which(RVC$AllSiteInfo$UpperDepth==0 & RVC$AllSiteInfo$ObservedProperty == input$UI_compareSoilProps)
         propData <- RVC$AllSiteInfo[idxs,]
         RVC$compareCurrentProps <- propData
