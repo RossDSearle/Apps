@@ -266,6 +266,9 @@ f7Float(
       }else{
         f7Card(
           title = NULL,
+          
+          
+          
           f7Picker(inputId='UI_SoilProps', label ='Soil Property', choices = c('None', 'None.'), placeholder = "Soil property values", openIn = "auto", value='None'), ## weird bug - you need to pecify a blank list to get the list items update to work
           htmlOutput('UI_SoilInfoHeader'),
           shinycssloaders::withSpinner(htmlOutput('UI_wait')),
