@@ -501,7 +501,7 @@ tags$style(type='text/css', "#UI_compareSoilProps-label  { font-size: 20px; line
           
           #f7Picker(inputId='UI_compareSoilProps', label ='Soil Property', choices = c('None', 'None.'), placeholder = "Soil property values", openIn = "auto", value='None'), ## weird bug - you need to pecify a blank list to get the list items update to work
           htmlOutput('UI_compareSoilInfoHeader'),
-          plotOutput('UI_compareBoxPlot'),
+          plotOutput('UI_compareBoxPlot', width=defWidth),
           htmlOutput('UI_compareSoilInfoSummary'),
           HTML('<BR>'),
           rHandsontableOutput('UI_comparePropInfo' )
