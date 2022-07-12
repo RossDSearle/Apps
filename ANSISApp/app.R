@@ -638,11 +638,11 @@ tags$style(type='text/css', "#UI_compareSoilProps-label  { font-size: 20px; line
       req(RVC$CompareCurrentSite)
       siteProps <- unique(RVC$CompareCurrentSite[RVC$CompareCurrentSite$UpperDepth==0,]$ObservedProperty)
       siteProps <- siteProps[!is.na(siteProps)]
-      if(input$deviceInfo$desktop) {
+    # if(input$deviceInfo$desktop) {
         updateSelectInput(inputId = 'UI_compareSoilProps', choices = as.character(siteProps))
-      }else{
-        updateF7Picker(inputId = 'UI_compareSoilProps', choices = as.character(siteProps))
-      }
+      # }else{
+      #   updateF7Picker(inputId = 'UI_compareSoilProps', choices = as.character(siteProps))
+      # }
     })
     
 
